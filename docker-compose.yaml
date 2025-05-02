@@ -67,7 +67,7 @@ services:
     env_file:
       - ./services/user-service/.env
     ports:
-      - "3001:3000"
+      - "3001:3001"
 
 volumes:
   mongo-data:

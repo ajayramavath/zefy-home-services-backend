@@ -1,5 +1,5 @@
 // services/user-service/src/models/user.model.ts
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 // Provider types that your app supports
 export enum AuthProvider {
@@ -8,6 +8,28 @@ export enum AuthProvider {
   APPLE = "apple",
   // add more as needed
 }
+
+// Gender
+export type Gender = "male" | "female" | "other";
+// Favourite address
+export type FavoriteType = "home" | "work" | "other";
+
+// Sub-document for favourite locations
+export interface ILocation {
+  name: string;
+  lat: number;
+  lon: number;
+}
+
+// Sub-schema for a location
+const LocationSchema = new Schema<ILocation>(
+  {
+    name: { type: String, required: true },
+    lat: { type: Number, required: true },
+    lon: { type: Number, required: true },
+  },
+  { _id: false }
+);
 
 // Sub-document for each provider linked to a user
 export interface IAuthProvider {
@@ -21,9 +43,16 @@ export interface IAuthProvider {
   createdAt: Date;
 }
 
-export interface IUser extends Document {
+export interface IUser extends Document<Types.ObjectId> {
+  // _id: mongoose.Schema.Types.ObjectId;
   providers: IAuthProvider[];
   metadata: Record<string, any>; // extensible field for custom data
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  dateOfBirth?: Date;
+  gender?: Gender;
+  favoriteLocations: Partial<Record<FavoriteType, ILocation>>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +98,16 @@ const UserSchema = new Schema<IUser>(
     metadata: {
       type: Schema.Types.Mixed,
       default: {},
+    },
+    firstName: { type: String },
+    middleName: { type: String },
+    lastName: { type: String },
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ["male", "female", "other"] },
+    favoriteLocations: {
+      home: { type: LocationSchema, default: null },
+      work: { type: LocationSchema, default: null },
+      other: { type: LocationSchema, default: null },
     },
   },
   {
