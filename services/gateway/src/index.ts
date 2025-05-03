@@ -13,7 +13,7 @@ app.register(routes);
 app.register(swagger, {
   openapi: {
     info: {
-      title: "TaxiTribe API",
+      title: "Zefy Backend API",
       description: "Gateway + aggregation endpoints",
       version: "1.0.0",
     },

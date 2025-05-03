@@ -2,62 +2,163 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import admin from "firebase-admin";
 import UserModel, { AuthProvider } from "../models/user.model";
 
+interface RawProviderData {
+  providerId: string;  // e.g. "google.com"
+  uid: string;  // Firebase UID
+  email?: string;
+  phoneNumber?: string;
+  photoURL?: string;
+  displayName?: string;
+}
+
+interface RawFirebaseUser {
+  uid: string;
+  displayName?: string;
+  email?: string;
+  isEmailVerified: boolean;
+  isAnonymous: boolean;
+  metadata: {
+    creationTime: string;   // ISO timestamp
+    lastSignInTime: string;
+  };
+  phoneNumber?: string | null;
+  photoURL?: string;
+  providerData: RawProviderData[];
+  // … other fields (refreshToken, tenantId) ignored …
+}
+
 export class AuthController {
+  // static async googleSignIn(
+  //   req: FastifyRequest<{ Body: { idToken: string } }>,
+  //   reply: FastifyReply
+  // ) {
+  //   const { idToken } = req.body;
+  //   try {
+  //     // 1) Verify the token
+  //     const decoded = await admin.auth().verifyIdToken(idToken, true);
+  //     // 2) Fetch full user record
+  //     const fbUser = await admin.auth().getUser(decoded.uid);
+  //     // 3) Build provider entry
+  //     const authData = {
+  //       provider: AuthProvider.GOOGLE,
+  //       providerId: fbUser.uid,
+  //       email: fbUser.email!,
+  //       displayName: fbUser.displayName!,
+  //       photoURL: fbUser.photoURL!,
+  //       isVerified: fbUser.emailVerified,
+  //       createdAt: new Date(),
+  //     };
+  //     // 4) Upsert user
+  //     let user = await UserModel.findOne({
+  //       "providers.provider": AuthProvider.GOOGLE,
+  //       "providers.providerId": fbUser.uid,
+  //     });
+  //     if (user) {
+  //       await UserModel.updateOne(
+  //         { _id: user._id, "providers.providerId": fbUser.uid },
+  //         {
+  //           $set: {
+  //             "providers.$.displayName": authData.displayName,
+  //             "providers.$.photoURL": authData.photoURL,
+  //             "providers.$.isVerified": authData.isVerified,
+  //           },
+  //         }
+  //       );
+  //     } else {
+  //       user = await UserModel.create({ providers: [authData] });
+  //     }
+  //     // 5) Create session
+  //     const sessionToken = await req.server.createSession(user._id.toString());
+  //     return reply.send({
+  //       user,
+  //       sessionToken,
+  //       expiresIn: 7 * 24 * 3600,
+  //     });
+  //   } catch (err) {
+  //     req.log.error(err);
+  //     return reply
+  //       .status(401)
+  //       .send({ error: "Invalid or expired Firebase token." });
+  //   }
+  // }
+
+  // controllers/auth.controller.ts
   static async googleSignIn(
-    req: FastifyRequest<{ Body: { idToken: string } }>,
+    req: FastifyRequest<{ Body: RawFirebaseUser }>,
     reply: FastifyReply
   ) {
-    const { idToken } = req.body;
     try {
-      // 1) Verify the token
-      const decoded = await admin.auth().verifyIdToken(idToken, true);
-      // 2) Fetch full user record
-      const fbUser = await admin.auth().getUser(decoded.uid);
-      // 3) Build provider entry
+      const fbUser = req.body;
+
+      // 1) Basic shape validation
+      if (
+        !fbUser.uid ||
+        !Array.isArray(fbUser.providerData) ||
+        fbUser.providerData.length === 0
+      ) {
+        return reply.status(400).send({ error: 'Invalid Firebase user payload.' });
+      }
+
+      // 2) Find the matching Google provider entry
+      const pd = fbUser.providerData.find(
+        (p) => p.providerId === 'google.com' && p.uid === fbUser.uid
+      );
+      if (!pd) {
+        return reply
+          .status(400)
+          .send({ error: 'No matching Google provider data for this user.' });
+      }
+
+      // 3) Build your internal provider record
       const authData = {
         provider: AuthProvider.GOOGLE,
-        providerId: fbUser.uid,
-        email: fbUser.email!,
-        displayName: fbUser.displayName!,
-        photoURL: fbUser.photoURL!,
-        isVerified: fbUser.emailVerified,
-        createdAt: new Date(),
+        providerId: pd.uid,
+        email: pd.email ?? fbUser.email,
+        displayName: pd.displayName ?? fbUser.displayName,
+        photoURL: pd.photoURL ?? fbUser.photoURL,
+        isVerified: fbUser.isEmailVerified,
+        createdAt: new Date(fbUser.metadata.creationTime),
       };
-      // 4) Upsert user
+
+      // 4) Upsert into your User collection
       let user = await UserModel.findOne({
-        "providers.provider": AuthProvider.GOOGLE,
-        "providers.providerId": fbUser.uid,
+        'providers.provider': AuthProvider.GOOGLE,
+        'providers.providerId': pd.uid,
       });
+
       if (user) {
         await UserModel.updateOne(
-          { _id: user._id, "providers.providerId": fbUser.uid },
+          { _id: user._id, 'providers.providerId': pd.uid },
           {
             $set: {
-              "providers.$.displayName": authData.displayName,
-              "providers.$.photoURL": authData.photoURL,
-              "providers.$.isVerified": authData.isVerified,
+              'providers.$': authData,
+              metadata: fbUser.metadata,
             },
           }
         );
       } else {
-        user = await UserModel.create({ providers: [authData] });
+        user = await UserModel.create({
+          providers: [authData],
+          metadata: fbUser.metadata,
+        });
       }
-      // 5) Create session
+
+      // 5) Issue a session
       const sessionToken = await req.server.createSession(user._id.toString());
+
       return reply.send({
         user,
         sessionToken,
         expiresIn: 7 * 24 * 3600,
       });
     } catch (err) {
-      req.log.error(err);
+      req.log.error({ err }, 'Error in googleSignIn');
       return reply
-        .status(401)
-        .send({ error: "Invalid or expired Firebase token." });
+        .status(500)
+        .send({ error: 'An unexpected error occurred. Please try again.' });
     }
   }
 
-  // controllers/auth.controller.ts
   static async linkPhone(
     req: FastifyRequest<{ Body: { phoneIdToken: string } }>,
     reply: FastifyReply

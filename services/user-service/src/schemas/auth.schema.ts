@@ -66,12 +66,54 @@ export const googleSignInSchema: FastifySchema = {
 export const linkPhoneSchema: FastifySchema = {
   description: "Link a verified phone (via Firebase) to the current user",
   tags: ["Auth"],
+  // body: {
+  //   type: "object",
+  //   required: ["phoneIdToken"],
+  //   properties: {
+  //     phoneIdToken: { type: "string" },
+  //   },
+  // },
   body: {
-    type: "object",
-    required: ["phoneIdToken"],
+    type: 'object',
+    required: [
+      'uid',
+      'isEmailVerified',
+      'isAnonymous',
+      'metadata',
+      'providerData'
+    ],
     properties: {
-      phoneIdToken: { type: "string" },
-    },
+      uid: { type: 'string' },
+      displayName: { type: 'string', nullable: true },
+      email: { type: 'string', format: 'email', nullable: true },
+      isEmailVerified: { type: 'boolean' },
+      isAnonymous: { type: 'boolean' },
+      metadata: {
+        type: 'object',
+        required: ['creationTime', 'lastSignInTime'],
+        properties: {
+          creationTime: { type: 'string', format: 'date-time' },
+          lastSignInTime: { type: 'string', format: 'date-time' }
+        }
+      },
+      phoneNumber: { type: ['string', 'null'] },
+      photoURL: { type: 'string', nullable: true },
+      providerData: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['providerId', 'uid'],
+          properties: {
+            providerId: { type: 'string' },
+            uid: { type: 'string' },
+            email: { type: 'string', format: 'email', nullable: true },
+            phoneNumber: { type: ['string', 'null'] },
+            photoURL: { type: 'string', nullable: true },
+            displayName: { type: 'string', nullable: true }
+          }
+        }
+      }
+    }
   },
   response: {
     200: {
