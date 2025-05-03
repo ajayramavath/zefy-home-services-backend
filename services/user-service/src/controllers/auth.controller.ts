@@ -62,12 +62,26 @@ export class AuthController {
     req: FastifyRequest<{ Body: { phoneIdToken: string } }>,
     reply: FastifyReply
   ) {
-    // 1) Validate session
-    const { userId } = req.session; // from your session plugin
+    const { userId } = req.session;     // from your session plugin
     const { phoneIdToken } = req.body;
-    // 2) Verify the phone token
-    const decoded = await admin.auth().verifyIdToken(phoneIdToken, true);
-    // 3) Build phone provider record
+
+    // 1) Verify the Firebase phone token
+    let decoded: admin.auth.DecodedIdToken;
+    try {
+      decoded = await admin.auth().verifyIdToken(phoneIdToken, true);
+    } catch (err) {
+      req.log.warn({ err }, 'Invalid or revoked phone ID token');
+      return reply.status(401).send({ error: 'Invalid or expired phone token' });
+    }
+
+    // 2) Ensure the token actually came with a phone number
+    if (!decoded.phone_number) {
+      return reply
+        .status(400)
+        .send({ error: 'Token does not contain a phone number' });
+    }
+
+    // 3) Prepare the provider record
     const phoneData = {
       provider: AuthProvider.PHONE,
       providerId: decoded.uid,
@@ -75,11 +89,26 @@ export class AuthController {
       isVerified: decoded.phone_number_verified,
       createdAt: new Date(),
     };
-    // 4) Push into existing User.providers
-    await UserModel.updateOne(
+
+    // 4) Atomically add it if not already present
+    const result = await UserModel.updateOne(
       { _id: userId },
-      { $push: { providers: phoneData } }
+      { $addToSet: { providers: phoneData } }
     );
+
+    // 5a) No matching user ⇒ 404
+    if (result.matchedCount === 0) {
+      return reply.status(404).send({ error: 'User not found' });
+    }
+
+    // 5b) No modification ⇒ it was already linked ⇒ 409
+    if (result.modifiedCount === 0) {
+      return reply
+        .status(409)
+        .send({ error: 'This phone number is already linked to your account' });
+    }
+
+    // 6) Success
     return reply.send({ success: true });
   }
-}
+}  
