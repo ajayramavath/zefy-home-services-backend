@@ -29,14 +29,14 @@ app.register(swagger, {
       description: "Gateway + aggregation endpoints",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:3001", description: "Local dev" }],
+    servers: [{ url: "http://localhost:3000", description: "Local dev" }],
   },
 
   // you can also pass `refResolver`, `security`, `components`, etc.
 });
 
 app.register(swaggerUI, {
-  routePrefix: "/docs", // host the interactive UI at /docs
+  routePrefix: "/users/docs", // host the interactive UI at /docs
   uiConfig: {
     docExpansion: "none",
     deepLinking: false,

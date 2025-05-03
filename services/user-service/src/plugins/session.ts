@@ -74,7 +74,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
 
   // Validate session token on every request except auth routes
   app.addHook("preHandler", async (req, reply) => {
-    if (req.url.startsWith("/users/auth") || req.url.startsWith("/docs")) {
+    if (req.url.startsWith("/users/auth") || req.url.startsWith("/users/docs")) {
       return;
     }
 

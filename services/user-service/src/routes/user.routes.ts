@@ -5,22 +5,22 @@ import { ProfileController } from "../controllers/profile.controller";
 import { googleSignInSchema, linkPhoneSchema } from "../schemas/auth.schema";
 
 export default async function userRoutes(app: FastifyInstance) {
-  app.get("/", async (_req: FastifyRequest, reply: FastifyReply) => {
-    const users = await User.find().lean();
-    return reply.send(users);
-  });
+  // app.get("/", async (_req: FastifyRequest, reply: FastifyReply) => {
+  //   const users = await User.find().lean();
+  //   return reply.send(users);
+  // });
 
-  app.get(
-    "/:id",
-    async (
-      req: FastifyRequest<{ Params: { id: string } }>,
-      reply: FastifyReply
-    ) => {
-      const user = await User.findById(req.params.id).lean();
-      if (!user) return reply.status(404).send({ message: "User not found" });
-      return reply.send(user);
-    }
-  );
+  // app.get(
+  //   "/:id",
+  //   async (
+  //     req: FastifyRequest<{ Params: { id: string } }>,
+  //     reply: FastifyReply
+  //   ) => {
+  //     const user = await User.findById(req.params.id).lean();
+  //     if (!user) return reply.status(404).send({ message: "User not found" });
+  //     return reply.send(user);
+  //   }
+  // );
 
   // API to validate google authentication, fetch user record and store it in the database
   app.post(
