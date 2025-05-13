@@ -68,6 +68,12 @@ services:
       - ./services/user-service/.env
     ports:
       - "3001:3001"
+    # Mount your Firebase service account key into the container
+    volumes:
+      - ./services/user-service/secrets/zefy-30706-c8da4feed63f.json:/secrets/zefy-30706-c8da4feed63f.json:ro
+    # Tell the Admin SDK where to find it
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/zefy-30706-c8da4feed63f.json
 
 volumes:
   mongo-data:

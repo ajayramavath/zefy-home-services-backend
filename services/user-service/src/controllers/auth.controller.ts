@@ -3,8 +3,8 @@ import admin from "firebase-admin";
 import UserModel, { AuthProvider } from "../models/user.model";
 
 interface RawProviderData {
-  providerId: string;  // e.g. "google.com"
-  uid: string;  // Firebase UID
+  providerId: string; // e.g. "google.com"
+  uid: string; // Firebase UID
   email?: string;
   phoneNumber?: string;
   photoURL?: string;
@@ -18,7 +18,7 @@ interface RawFirebaseUser {
   isEmailVerified: boolean;
   isAnonymous: boolean;
   metadata: {
-    creationTime: string;   // ISO timestamp
+    creationTime: string; // ISO timestamp
     lastSignInTime: string;
   };
   phoneNumber?: string | null;
@@ -28,134 +28,57 @@ interface RawFirebaseUser {
 }
 
 export class AuthController {
-  // static async googleSignIn(
-  //   req: FastifyRequest<{ Body: { idToken: string } }>,
-  //   reply: FastifyReply
-  // ) {
-  //   const { idToken } = req.body;
-  //   try {
-  //     // 1) Verify the token
-  //     const decoded = await admin.auth().verifyIdToken(idToken, true);
-  //     // 2) Fetch full user record
-  //     const fbUser = await admin.auth().getUser(decoded.uid);
-  //     // 3) Build provider entry
-  //     const authData = {
-  //       provider: AuthProvider.GOOGLE,
-  //       providerId: fbUser.uid,
-  //       email: fbUser.email!,
-  //       displayName: fbUser.displayName!,
-  //       photoURL: fbUser.photoURL!,
-  //       isVerified: fbUser.emailVerified,
-  //       createdAt: new Date(),
-  //     };
-  //     // 4) Upsert user
-  //     let user = await UserModel.findOne({
-  //       "providers.provider": AuthProvider.GOOGLE,
-  //       "providers.providerId": fbUser.uid,
-  //     });
-  //     if (user) {
-  //       await UserModel.updateOne(
-  //         { _id: user._id, "providers.providerId": fbUser.uid },
-  //         {
-  //           $set: {
-  //             "providers.$.displayName": authData.displayName,
-  //             "providers.$.photoURL": authData.photoURL,
-  //             "providers.$.isVerified": authData.isVerified,
-  //           },
-  //         }
-  //       );
-  //     } else {
-  //       user = await UserModel.create({ providers: [authData] });
-  //     }
-  //     // 5) Create session
-  //     const sessionToken = await req.server.createSession(user._id.toString());
-  //     return reply.send({
-  //       user,
-  //       sessionToken,
-  //       expiresIn: 7 * 24 * 3600,
-  //     });
-  //   } catch (err) {
-  //     req.log.error(err);
-  //     return reply
-  //       .status(401)
-  //       .send({ error: "Invalid or expired Firebase token." });
-  //   }
-  // }
-
-  // controllers/auth.controller.ts
   static async googleSignIn(
-    req: FastifyRequest<{ Body: RawFirebaseUser }>,
+    req: FastifyRequest<{ Body: { idToken: string } }>,
     reply: FastifyReply
   ) {
+    const { idToken } = req.body;
     try {
-      const fbUser = req.body;
-
-      // 1) Basic shape validation
-      if (
-        !fbUser.uid ||
-        !Array.isArray(fbUser.providerData) ||
-        fbUser.providerData.length === 0
-      ) {
-        return reply.status(400).send({ error: 'Invalid Firebase user payload.' });
-      }
-
-      // 2) Find the matching Google provider entry
-      const pd = fbUser.providerData.find(
-        (p) => p.providerId === 'google.com' && p.uid === fbUser.uid
-      );
-      if (!pd) {
-        return reply
-          .status(400)
-          .send({ error: 'No matching Google provider data for this user.' });
-      }
-
-      // 3) Build your internal provider record
+      // 1) Verify the token
+      const decoded = await admin.auth().verifyIdToken(idToken, true);
+      // 2) Fetch full user record
+      const fbUser = await admin.auth().getUser(decoded.uid);
+      // 3) Build provider entry
       const authData = {
         provider: AuthProvider.GOOGLE,
-        providerId: pd.uid,
-        email: pd.email ?? fbUser.email,
-        displayName: pd.displayName ?? fbUser.displayName,
-        photoURL: pd.photoURL ?? fbUser.photoURL,
-        isVerified: fbUser.isEmailVerified,
-        createdAt: new Date(fbUser.metadata.creationTime),
+        providerId: fbUser.uid,
+        email: fbUser.email!,
+        displayName: fbUser.displayName!,
+        photoURL: fbUser.photoURL!,
+        isVerified: fbUser.emailVerified,
+        createdAt: new Date(),
       };
-
-      // 4) Upsert into your User collection
+      // 4) Upsert user
       let user = await UserModel.findOne({
-        'providers.provider': AuthProvider.GOOGLE,
-        'providers.providerId': pd.uid,
+        "providers.provider": AuthProvider.GOOGLE,
+        "providers.providerId": fbUser.uid,
       });
-
       if (user) {
         await UserModel.updateOne(
-          { _id: user._id, 'providers.providerId': pd.uid },
+          { _id: user._id, "providers.providerId": fbUser.uid },
           {
             $set: {
-              'providers.$': authData,
-              metadata: fbUser.metadata,
+              "providers.$.displayName": authData.displayName,
+              "providers.$.photoURL": authData.photoURL,
+              "providers.$.isVerified": authData.isVerified,
             },
           }
         );
       } else {
-        user = await UserModel.create({
-          providers: [authData],
-          metadata: fbUser.metadata,
-        });
+        user = await UserModel.create({ providers: [authData] });
       }
-
-      // 5) Issue a session
+      // 5) Create session
       const sessionToken = await req.server.createSession(user._id.toString());
-
       return reply.send({
         user,
         sessionToken,
         expiresIn: 7 * 24 * 3600,
       });
     } catch (err) {
-      req.log.error({ err }, 'Error in googleSignIn');
+      req.log.error(err);
       return reply
-        .status(500)
-        .send({ error: 'An unexpected error occurred. Please try again.' });
+        .status(401)
+        .send({ error: "Invalid or expired Firebase token." });
     }
   }
 
@@ -163,7 +86,7 @@ export class AuthController {
     req: FastifyRequest<{ Body: { phoneIdToken: string } }>,
     reply: FastifyReply
   ) {
-    const { userId } = req.session;     // from your session plugin
+    const { userId } = req.session; // from your session plugin
     const { phoneIdToken } = req.body;
 
     // 1) Verify the Firebase phone token
@@ -171,15 +94,17 @@ export class AuthController {
     try {
       decoded = await admin.auth().verifyIdToken(phoneIdToken, true);
     } catch (err) {
-      req.log.warn({ err }, 'Invalid or revoked phone ID token');
-      return reply.status(401).send({ error: 'Invalid or expired phone token' });
+      req.log.warn({ err }, "Invalid or revoked phone ID token");
+      return reply
+        .status(401)
+        .send({ error: "Invalid or expired phone token" });
     }
 
     // 2) Ensure the token actually came with a phone number
     if (!decoded.phone_number) {
       return reply
         .status(400)
-        .send({ error: 'Token does not contain a phone number' });
+        .send({ error: "Token does not contain a phone number" });
     }
 
     // 3) Prepare the provider record
@@ -199,17 +124,17 @@ export class AuthController {
 
     // 5a) No matching user ⇒ 404
     if (result.matchedCount === 0) {
-      return reply.status(404).send({ error: 'User not found' });
+      return reply.status(404).send({ error: "User not found" });
     }
 
     // 5b) No modification ⇒ it was already linked ⇒ 409
     if (result.modifiedCount === 0) {
       return reply
         .status(409)
-        .send({ error: 'This phone number is already linked to your account' });
+        .send({ error: "This phone number is already linked to your account" });
     }
 
     // 6) Success
     return reply.send({ success: true });
   }
-}  
+}

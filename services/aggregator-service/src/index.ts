@@ -8,9 +8,6 @@ import {
   rabbitmqPlugin,
   sessionPlugin,
 } from "@zf/common";
-import userRoutes from "./routes/user.routes";
-import favoritesRoutes from "./routes/favorites.routes";
-import firebasePlugin from "./plugins/firebase";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const app = Fastify({ logger: true });
@@ -19,7 +16,7 @@ const app = Fastify({ logger: true });
 app.register(mongoosePlugin, { uri: process.env.MONGO_URI! });
 app.register(redisPlugin, { url: process.env.REDIS_URL! });
 app.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
-app.register(firebasePlugin);
+
 app.register(sessionPlugin, {
   // e.g. 7 days
   ttlSeconds: 7 * 24 * 3600,
@@ -40,7 +37,7 @@ app.register(swagger, {
 });
 
 app.register(swaggerUI, {
-  routePrefix: "/users/docs", // host the interactive UI at /docs
+  routePrefix: "/aggregator/docs", // host the interactive UI at /docs
   uiConfig: {
     docExpansion: "none",
     deepLinking: false,
@@ -52,8 +49,8 @@ app.register(swaggerUI, {
 });
 
 // Register routes
-app.register(userRoutes, { prefix: "/users" });
-app.register(favoritesRoutes, { prefix: "/users" });
+// app.register(userRoutes, { prefix: "/users" });
+// app.register(favoritesRoutes, { prefix: "/users" });
 
 // Health check
 app.get("/health", async () => ({ status: "ok" }));
@@ -61,7 +58,7 @@ app.get("/health", async () => ({ status: "ok" }));
 const start = async () => {
   try {
     await app.listen({ port: PORT, host: "0.0.0.0" });
-    app.log.info(`🚀 user-service running on port ${PORT}`);
+    app.log.info(`🚀 aggregator-service running on port ${PORT}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

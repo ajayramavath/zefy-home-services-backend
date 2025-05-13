@@ -9,7 +9,16 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "baseUrl": ".",
+        "paths": {
+            "@zf/common": [
+                "packages/common/dist/index"
+            ],
+            "@zf/common/*": [
+                "packages/common/dist/*"
+            ]
+        }
     },
     "exclude": [
         "node_modules",
