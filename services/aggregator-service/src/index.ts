@@ -30,7 +30,7 @@ app.register(swagger, {
       description: "Gateway + aggregation endpoints",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:3000", description: "Local dev" }],
+    servers: [{ url: "http://localhost:3002", description: "Local dev" }],
   },
 
   // you can also pass `refResolver`, `security`, `components`, etc.
