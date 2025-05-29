@@ -19,17 +19,15 @@ const AggregatorAccountSchema = new Schema<IAggregatorAccount>(
   {
     userId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
       required: true,
     },
     aggregator: {
       type: String,
       required: true,
-      enum: ["uber", "ola"], // expand as you add more adapters
+      enum: ["uber", "ola", "gozo"], // expand as you add more adapters
     },
     creds: {
       type: Schema.Types.Mixed,
-      required: true,
     },
     linkedAt: {
       type: Date,

@@ -8,6 +8,8 @@ import {
   rabbitmqPlugin,
   sessionPlugin,
 } from "@zf/common";
+import registryPlugin from "./plugins/registry";
+import aggregatorRoutes from "./routes/aggregator.routes";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const app = Fastify({ logger: true });
@@ -16,6 +18,7 @@ const app = Fastify({ logger: true });
 app.register(mongoosePlugin, { uri: process.env.MONGO_URI! });
 app.register(redisPlugin, { url: process.env.REDIS_URL! });
 app.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
+app.register(registryPlugin);
 
 app.register(sessionPlugin, {
   // e.g. 7 days
@@ -49,7 +52,7 @@ app.register(swaggerUI, {
 });
 
 // Register routes
-// app.register(userRoutes, { prefix: "/users" });
+app.register(aggregatorRoutes, { prefix: "/aggregator" });
 // app.register(favoritesRoutes, { prefix: "/users" });
 
 // Health check

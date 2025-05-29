@@ -7,6 +7,7 @@ export interface FareRequest {
   from: Coordinates;
   to: Coordinates;
   passengers?: number;
+  type?: string;
 }
 
 export interface FareResponse {
