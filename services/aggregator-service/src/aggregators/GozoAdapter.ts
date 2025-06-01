@@ -1,6 +1,14 @@
+// services/aggregator-service/src/aggregators/GozoAdapter.ts
 import axios from 'axios';
 import { BaseAggregator } from './BaseAggregator';
-import { FareRequest, FareResponse, Credentials } from '@zf/types'; // or '@ms/types'
+import {
+  FareRequest,
+  FareResponse,
+  Credentials,
+  TripType,
+  OutstationSubType,
+  AirportSubType,
+} from '@zf/types'; // or '@zf/types'
 
 export default class GozoAdapter extends BaseAggregator {
   public readonly name = 'gozo';
@@ -11,10 +19,6 @@ export default class GozoAdapter extends BaseAggregator {
     this.apiKey = apiKey;
   }
 
-  /**
-   * For Gozo we link by simply storing an API key.
-   * Expects creds = { apiKey: string }.
-   */
   async linkAccount(creds: unknown): Promise<Credentials> {
     if (
       typeof creds !== 'object' ||
@@ -26,11 +30,6 @@ export default class GozoAdapter extends BaseAggregator {
     return { apiKey: (creds as any).apiKey };
   }
 
-  /**
-   * Takes our updated FareRequest (with fromLat/fromLng, toLat/toLng) 
-   * and builds Gozo’s payload accordingly.  
-   * Then calls Gozo’s API with Basic auth and returns a normalized array.
-   */
   async getFares(
     creds: Credentials,
     req: FareRequest
@@ -41,116 +40,260 @@ export default class GozoAdapter extends BaseAggregator {
     }
 
     //
-    // 1) Map tripType + subType → Gozo’s numeric tripType code
+    // 1) Map string tripType → Gozo numeric code
     //
-    let tripTypeCode: number;
-    if (req.tripType === 'outstation') {
-      if (req.subType === 'oneway') {
-        tripTypeCode = 1;
-      } else if (req.subType === 'roundtrip') {
-        tripTypeCode = 2;
-      } else {
+    let gozoTripType: number;
+    switch (req.tripType as TripType) {
+      case 'outstation':
+        // must have subType = 'oneWay' | 'roundTrip'
+        if (!req.subType) {
+          throw new Error(
+            'GozoAdapter: subType is required when tripType="outstation"'
+          );
+        }
+        const outSub = req.subType as OutstationSubType;
+        gozoTripType =
+          outSub === 'oneWay' ? 1 : outSub === 'roundTrip' ? 2 : NaN;
+        if (isNaN(gozoTripType)) {
+          throw new Error(
+            `GozoAdapter: invalid subType="${req.subType}" for outstation`
+          );
+        }
+        break;
+
+      case 'airport':
+        // must have subType = 'pickup' | 'dropOff'
+        if (!req.subType) {
+          throw new Error(
+            'GozoAdapter: subType is required when tripType="airport"'
+          );
+        }
+        const airSub = req.subType as AirportSubType;
+        if (airSub === 'pickup' || airSub === 'dropOff') {
+          gozoTripType = 4;
+        } else {
+          throw new Error(
+            `GozoAdapter: invalid subType="${req.subType}" for airport`
+          );
+        }
+        break;
+
+      case 'urban':
+        // treat urban exactly like one‐way (Gozo’s code=1)
+        gozoTripType = 1;
+        break;
+
+      case 'dayRental4':
+        // day rental (4hr/40km), code=9
+        gozoTripType = 9;
+        break;
+      case 'dayRental4':
+        // day rental (8hr/80km), code=9
+        gozoTripType = 10;
+        break;
+      case 'dayRental4':
+        // day rental (12hr/120km), code=9
+        gozoTripType = 11;
+        break;
+
+      default:
         throw new Error(
-          'GozoAdapter: For tripType="outstation", subType must be "oneway" or "roundtrip"'
+          `GozoAdapter: unsupported tripType="${req.tripType}"`
         );
-      }
-    } else if (req.tripType === 'airport') {
-      tripTypeCode = 4;
-    } else if (req.tripType === 'dayRental4') {
-      tripTypeCode = 9;
-    } else if (req.tripType === 'dayRental8') {
-      tripTypeCode = 10;
-    } else if (req.tripType === 'dayRental12') {
-      tripTypeCode = 11;
-    } else {
-      // Default to ONE WAY if not recognized
-      tripTypeCode = 1;
     }
 
     //
-    // 2) Map vehicleType → Gozo’s cabType array
+    // 2) Map vehicleType → Gozo cabType array
     //
-    let cabType: number[];
+    let gozoCabType: number[];
     switch (req.vehicleType) {
       case 'hatchback':
-        cabType = [1, 72];
+        gozoCabType = [1, 72];
         break;
       case 'sedan':
-        cabType = [3, 5, 73];
+        gozoCabType = [3, 5, 73];
         break;
       case 'suv':
-        cabType = [2, 6, 74];
+        gozoCabType = [2, 6, 74];
         break;
       case 'all':
-        cabType = [1, 2, 3, 5, 6, 14, 15, 16, 73, 74, 75];
+        gozoCabType = [1, 2, 3, 5, 6, 14, 15, 16, 73, 74, 75];
         break;
       default:
         throw new Error(
-          'GozoAdapter: vehicleType must be "hatchback", "sedan", "suv", or "all"'
+          `GozoAdapter: unsupported vehicleType="${req.vehicleType}"`
         );
     }
 
     //
-    // 3) Build Gozo’s routes array using fromLat/fromLng and toLat/toLng
+    // 3) Build Gozo’s routes[] exactly as per tripType/subType
     //
-    const routes = [
-      {
+    const routes: Array<{
+      startDate: string;
+      startTime: string;
+      source: any;
+      destination: any;
+    }> = [];
+
+    if (req.tripType === 'outstation') {
+      // TWO‐LEG: first leg = “one‐way” outward, second = return
+      // Outward
+      routes.push({
         startDate: req.startDate,
         startTime: req.startTime,
         source: {
           address: req.fromAddress,
           coordinates: {
             latitude: req.fromLat,
-            longitude: req.fromLng
-          }
+            longitude: req.fromLng,
+          },
         },
         destination: {
           address: req.toAddress,
           coordinates: {
             latitude: req.toLat,
-            longitude: req.toLng
-          }
+            longitude: req.toLng,
+          },
+        },
+      });
+
+      // Return leg uses returnDate if subType='roundTrip'
+      if ((req.subType as OutstationSubType) === 'roundTrip') {
+        if (!req.returnDate) {
+          throw new Error(
+            'GozoAdapter: returnDate is required for outstation roundTrip'
+          );
         }
+        const [rdDate, rdTime] = req.returnDate.split(' ');
+        routes.push({
+          startDate: rdDate,
+          startTime: rdTime,
+          source: {
+            address: req.toAddress,
+            coordinates: {
+              latitude: req.toLat,
+              longitude: req.toLng,
+            },
+          },
+          destination: {
+            address: req.fromAddress,
+            coordinates: {
+              latitude: req.fromLat,
+              longitude: req.fromLng,
+            },
+          },
+        });
       }
-    ];
+    } else if (req.tripType === 'airport') {
+      // ONE‐LEG: set isAirport=1 on the correct side
+      const source: any = {
+        address: req.fromAddress,
+        coordinates: {
+          latitude: req.fromLat,
+          longitude: req.fromLng,
+        },
+      };
+      const destination: any = {
+        address: req.toAddress,
+        coordinates: {
+          latitude: req.toLat,
+          longitude: req.toLng,
+        },
+      };
+
+      const airSub = req.subType as AirportSubType;
+      if (airSub === 'pickup') {
+        source.isAirport = 1;
+      } else if (airSub === 'dropOff') {
+        destination.isAirport = 1;
+      }
+
+      routes.push({
+        startDate: req.startDate,
+        startTime: req.startTime,
+        source,
+        destination,
+      });
+    } else if (req.tripType === 'urban') {
+      // ONE LEG local trip (same as one‐way)
+      routes.push({
+        startDate: req.startDate,
+        startTime: req.startTime,
+        source: {
+          address: req.fromAddress,
+          coordinates: {
+            latitude: req.fromLat,
+            longitude: req.fromLng,
+          },
+        },
+        destination: {
+          address: req.toAddress,
+          coordinates: {
+            latitude: req.toLat,
+            longitude: req.toLng,
+          },
+        },
+      });
+    } else {
+      // rental: one leg with same source/destination
+      routes.push({
+        startDate: req.startDate,
+        startTime: req.startTime,
+        source: {
+          address: req.fromAddress,
+          coordinates: {
+            latitude: req.fromLat,
+            longitude: req.fromLng,
+          },
+        },
+        destination: {
+          address: req.fromAddress,
+          coordinates: {
+            latitude: req.fromLat,
+            longitude: req.fromLng,
+          },
+        },
+      });
+    }
 
     //
-    // 4) Assemble Gozo’s request body
+    // 4) Build final Gozo payload
     //
-    const body = {
-      tripType: tripTypeCode,
-      cabType,
-      routes
+    const body: any = {
+      tripType: gozoTripType,
+      cabType: gozoCabType,
+      routes,
     };
+
+    if (req.tripType === 'outstation' && (req.subType as OutstationSubType) === 'roundTrip') {
+      body.returnDate = req.returnDate;
+    }
 
     try {
       //
-      // 5) Call Gozo’s fare endpoint with Basic auth header
+      // 5) POST to Gozo with Basic + x-api-key
       //
       const response = await axios.post(
-        'http://gozotech1.ddns.net:5192/api/cpapi/booking/getQuote',
+        'https://api.gozo.com/v1/fare',
         body,
         {
           headers: {
-            // Replace with your actual Basic token
-            Authorization: 'Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y',
+            Authorization:
+              'Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y',
             'Content-Type': 'application/json',
-            // If Gozo expects the API key via header:
-            'x-api-key': apiKey
-          }
+            'x-api-key': apiKey,
+          },
         }
       );
 
       //
-      // 6) Normalize Gozo’s response into our FareResponse[]
+      // 6) Normalize Gozo’s response (“gozoPayload formatting”)
       //
       const gozoPayload = response.data as {
         success: boolean;
         data: {
-          startDate: string;
-          startTime: string;
           quotedDistance: number;
-          estimatedDuration: number; // minutes
+          estimatedDuration: number;
           cabRate: Array<{
             cab: {
               id: number;
@@ -193,16 +336,16 @@ export default class GozoAdapter extends BaseAggregator {
           currency: 'INR',
           estimatedTimeMinutes: gozoPayload.data.estimatedDuration,
           vehicleType: entry.cab.type,
-          raw: entry
+          raw: entry,
         } as FareResponse;
       });
     } catch (err: any) {
       const status = err.response?.status;
-      const data = err.response?.data;
+      const payload = err.response?.data;
       throw new Error(
         `GozoAdapter: API request failed` +
         (status ? ` (status ${status})` : '') +
-        (data ? ` – ${JSON.stringify(data)}` : '')
+        (payload ? ` – ${JSON.stringify(payload)}` : '')
       );
     }
   }

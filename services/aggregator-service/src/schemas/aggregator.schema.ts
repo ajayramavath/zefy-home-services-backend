@@ -60,133 +60,103 @@ export const linkAccountSchema: FastifySchema = {
     }
 };
 
-/**
- * FareRequestBody:
- * {
- *   tripType: string,
- *   subType?: string,
- *   fromAddress: string,
- *   toAddress: string,
- *   startDate: string ("YYYY-MM-DD"),
- *   startTime: string ("HH:MM:SS"),
- *   vehicleType: "hatchback"|"sedan"|"suv"|"all",
- *   fromLat: number,
- *   fromLng: number,
- *   toLat: number,
- *   toLng: number,
- *   passengers?: number
- * }
- *
- * Response: { fares: FareResponse[] }
- * where FareResponse = {
- *   aggregator: string,
- *   price: number,
- *   currency: string,
- *   estimatedTimeMinutes: number,
- *   vehicleType: string,
- *   raw?: object
- * }
- */
 const coordinatesProps = {
     type: 'object',
     properties: {
-        lat: { type: 'number', example: 28.6893144 },
-        lon: { type: 'number', example: 77.2919663 }
+        latitude: { type: 'number', example: 22.6531496 },
+        longitude: { type: 'number', example: 88.4448719 }
     },
-    required: ['lat', 'lon']
+    required: ['latitude', 'longitude']
+};
+
+const locationSchema = {
+    type: 'object',
+    properties: {
+        address: { type: 'string', example: 'NSC Bose Airport' },
+        name: { type: 'string', nullable: true, example: 'Netaji Subhas Chandra Bose International Airport (CCU)' },
+        coordinates: coordinatesProps,
+        isAirport: {
+            type: ['integer', 'null'],
+            description: 'Set to 1 if this location is the airport pickup/dropoff',
+            example: 1
+        }
+    },
+    required: ['address', 'coordinates']
+};
+
+const routeSchema = {
+    type: 'object',
+    properties: {
+        startDate: {
+            type: 'string',
+            format: 'date',
+            example: '2024-03-21'
+        },
+        startTime: {
+            type: 'string',
+            pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$',
+            example: '01:35:00'
+        },
+        source: locationSchema,
+        destination: locationSchema
+    },
+    required: ['startDate', 'startTime', 'source', 'destination']
 };
 
 export const getFaresSchema: FastifySchema = {
-    description: 'Fetch fare quotes from all linked (or all) aggregators',
+    description:
+        'Fetch fare quotes (outstation, airport, urban, or rental).  \n' +
+        '- **outstation**: requires `subType` = `"oneWay"` or `"roundTrip"`, and if `"roundTrip"`, a `returnDate`.  \n' +
+        '- **airport**: requires `subType` = `"pickup"` or `"dropOff"`, plus `isAirport` in one leg.  \n' +
+        '- **urban**: treated like a local (one‐way) trip.  \n' +
+        '- **rental**: one‐leg, same source/destination (day rental code).',
     tags: ['Aggregators'],
     body: {
         type: 'object',
-        required: [
-            'tripType',
-            'fromAddress',
-            'toAddress',
-            'startDate',
-            'startTime',
-            'vehicleType',
-            'fromLat',
-            'fromLng',
-            'toLat',
-            'toLng'
-        ],
+        required: ['tripType', 'vehicleType', 'routes'],
         properties: {
             tripType: {
                 type: 'string',
-                description:
-                    'Type of trip: e.g. "outstation", "airport", "dayRental4", etc. ' +
-                    'If "outstation", also include subType.',
-                example: 'outstation'
+                enum: ['outstation', 'airport', 'urban', 'rental'],
+                example: 'outstation',
+                description: '`outstation` | `airport` | `urban` | `rental`'
             },
             subType: {
                 type: 'string',
+                nullable: true,
                 description:
-                    'For tripType="outstation": "oneway" | "roundtrip". Not required otherwise.',
-                example: 'oneway'
+                    '`"oneWay"` or `"roundTrip"` when `tripType="outstation"`,  \n' +
+                    '`"pickup"` or `"dropOff"` when `tripType="airport"`',
+                example: 'oneWay'
             },
-            fromAddress: {
+            returnDate: {
                 type: 'string',
-                description: 'Pickup address (freeform).',
-                example: 'Shahdara, Delhi, India'
-            },
-            toAddress: {
-                type: 'string',
-                description: 'Dropoff address (freeform).',
-                example: 'Agra, Uttar Pradesh'
-            },
-            startDate: {
-                type: 'string',
-                format: 'date',
-                description: 'Trip start date in YYYY-MM-DD format.',
-                example: '2024-12-06'
-            },
-            startTime: {
-                type: 'string',
-                pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$',
-                description: 'Trip start time in HH:MM:SS (24-hour) format.',
-                example: '17:50:00'
+                nullable: true,
+                description: 'Only for `tripType="outstation" && subType="roundTrip"`, format `YYYY-MM-DD HH:MM:SS`',
+                example: '2024-02-04 13:37:00'
             },
             vehicleType: {
                 type: 'string',
                 enum: ['hatchback', 'sedan', 'suv', 'all'],
+                example: 'hatchback',
+                description: '`hatchback` | `sedan` | `suv` | `all`'
+            },
+            routes: {
+                type: 'array',
+                minItems: 1,
+                items: routeSchema,
                 description:
-                    'Vehicle category: "hatchback", "sedan", "suv" or "all".',
-                example: 'hatchback'
-            },
-            fromLat: {
-                type: 'number',
-                description: 'Pickup latitude.',
-                example: 28.6893144
-            },
-            fromLng: {
-                type: 'number',
-                description: 'Pickup longitude.',
-                example: 77.2919663
-            },
-            toLat: {
-                type: 'number',
-                description: 'Dropoff latitude.',
-                example: 27.1767000
-            },
-            toLng: {
-                type: 'number',
-                description: 'Dropoff longitude.',
-                example: 78.0081000
-            },
-            passengers: {
-                type: 'integer',
-                minimum: 1,
-                description: 'Number of passengers (optional).',
-                example: 2
+                    'One or more legs.  \n' +
+                    '- **outstation / roundTrip**: exactly 2 legs if `subType="roundTrip"`, otherwise 1.  \n' +
+                    '- **airport**: 1 leg with `isAirport` on source (for pickup) or destination (for dropOff).  \n' +
+                    '- **urban**: 1 leg.  \n' +
+                    '- **rental**: 1 leg where source and destination are identical.'
             }
         }
     },
     response: {
         200: {
-            description: 'Array of fare quotes (may be empty).',
+            description: 'Array of normalized fare quotes.',
             type: 'object',
             properties: {
                 fares: {
@@ -195,23 +165,11 @@ export const getFaresSchema: FastifySchema = {
                         type: 'object',
                         properties: {
                             aggregator: { type: 'string', example: 'gozo' },
-                            price: { type: 'number', description: 'Total fare amount', example: 4584 },
+                            price: { type: 'number', example: 4584 },
                             currency: { type: 'string', example: 'INR' },
-                            estimatedTimeMinutes: {
-                                type: 'integer',
-                                description: 'Estimated trip duration in minutes',
-                                example: 360
-                            },
-                            vehicleType: {
-                                type: 'string',
-                                description: 'Vehicle class returned by aggregator',
-                                example: 'Compact (Value)'
-                            },
-                            raw: {
-                                type: 'object',
-                                description: 'The raw payload from the aggregator’s API',
-                                nullable: true
-                            }
+                            estimatedTimeMinutes: { type: 'integer', example: 360 },
+                            vehicleType: { type: 'string', example: 'Compact (Value)' },
+                            raw: { type: 'object', nullable: true }
                         },
                         required: ['aggregator', 'price', 'currency', 'estimatedTimeMinutes', 'vehicleType']
                     }
@@ -220,15 +178,15 @@ export const getFaresSchema: FastifySchema = {
             required: ['fares']
         },
         400: {
-            description: 'Bad request (missing or invalid fields in body).',
+            description: 'Invalid payload (missing or invalid fields).',
             type: 'object',
             properties: {
-                error: { type: 'string', example: 'tripType & vehicleType are required' }
+                error: { type: 'string', example: 'tripType & routes are required' }
             },
             required: ['error']
         },
         500: {
-            description: 'Internal server error while fetching fares.',
+            description: 'Server error while fetching fares.',
             type: 'object',
             properties: {
                 error: { type: 'string', example: 'Error fetching fares from aggregators' }

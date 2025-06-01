@@ -1,55 +1,62 @@
+
+
 export interface Coordinates {
-  lat: number;
-  lon: number;
+  latitude: number;
+  longitude: number;
 }
 
+export interface Location {
+  address: string;
+  name?: string;
+  coordinates: Coordinates;
+  /** Only for airport legs */
+  isAirport?: 1;
+}
+
+export interface Route {
+  startDate: string;   // “YYYY-MM-DD”
+  startTime: string;   // “HH:MM:SS”
+  source: Location;
+  destination: Location;
+}
+
+/**
+ * - tripType:
+ *    ‘outstation’ | ‘airport’ | ‘urban’ | ‘rental’
+ *
+ * - subType:
+ *    • if tripType === ‘outstation’:  ‘oneWay’ | ‘roundTrip’
+ *    • if tripType === ‘airport’:    ‘pickup’   | ‘dropOff’
+ *    • otherwise undefined
+ */
+export type TripType = 'outstation' | 'airport' | 'urban' | 'dayRental4' | 'dayRental8' | 'dayRental12';
+export type OutstationSubType = 'oneWay' | 'roundTrip';
+export type AirportSubType = 'pickup' | 'dropOff';
+
 export interface FareRequest {
-  /**
-   * The kind of trip: e.g. 'outstation', 'local', 'airport', etc.
-   * If 'outstation', you must also include a 'subType' of 'oneway' or 'roundtrip'.
-   */
-  tripType: string;
+  tripType: TripType;
 
-  /**
-   * Only required when tripType === 'outstation'.
-   * Must be 'oneway' or 'roundtrip'.
-   */
-  subType?: string;
+  /** only if tripType === ‘outstation’ */
+  subType?: OutstationSubType | AirportSubType;
 
-  /** Pickup address string (freeform) */
+
+
+  /** only if tripType === ‘roundTrip’ (inside outstation) */
+  returnDate?: string; // “YYYY-MM-DD HH:MM:SS”
+
   fromAddress: string;
-
-  /** Dropoff address string (freeform) */
-  toAddress: string;
-
-  /** ISO date: 'YYYY-MM-DD' */
-  startDate: string;
-
-  /** Time: 'HH:MM:SS' */
-  startTime: string;
-
-  /**
-   * Vehicle category:
-   * - 'hatchback'
-   * - 'sedan'
-   * - 'suv'
-   * - 'all'  (means any available Gozo model)
-   */
-  vehicleType: 'hatchback' | 'sedan' | 'suv' | 'all';
-
-  /** Pickup latitude */
   fromLat: number;
-
-  /** Pickup longitude */
   fromLng: number;
 
-  /** Dropoff latitude */
+  toAddress: string;
   toLat: number;
-
-  /** Dropoff longitude */
   toLng: number;
 
-  /** Optional passenger count */
+  startDate: string;   // “YYYY-MM-DD”
+  startTime: string;   // “HH:MM:SS”
+
+  vehicleType: 'hatchback' | 'sedan' | 'suv' | 'all';
+
   passengers?: number;
 }
 
@@ -64,9 +71,5 @@ export interface FareResponse {
 
 export interface Credentials {
   apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-  accessToken?: string;
-  refreshToken?: string;
   [key: string]: unknown;
 }
