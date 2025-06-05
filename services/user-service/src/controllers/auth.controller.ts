@@ -17,7 +17,7 @@ interface RawFirebaseUser {
   email?: string;
   isEmailVerified: boolean;
   isAnonymous: boolean;
-  metadata: {
+  metadata?: {
     creationTime: string; // ISO timestamp
     lastSignInTime: string;
   };
@@ -38,6 +38,7 @@ export class AuthController {
       const decoded = await admin.auth().verifyIdToken(idToken, true);
       // 2) Fetch full user record
       const fbUser = await admin.auth().getUser(decoded.uid);
+      console.log("fbUser----->", fbUser);
       // 3) Build provider entry
       const authData = {
         provider: AuthProvider.GOOGLE,
@@ -48,24 +49,27 @@ export class AuthController {
         isVerified: fbUser.emailVerified,
         createdAt: new Date(),
       };
+
+      console.log("authData----->", authData);
       // 4) Upsert user
       let user = await UserModel.findOne({
         "providers.provider": AuthProvider.GOOGLE,
         "providers.providerId": fbUser.uid,
       });
       if (user) {
-        await UserModel.updateOne(
-          { _id: user._id, "providers.providerId": fbUser.uid },
-          {
-            $set: {
-              "providers.$.displayName": authData.displayName,
-              "providers.$.photoURL": authData.photoURL,
-              "providers.$.isVerified": authData.isVerified,
-            },
-          }
-        );
+        // await UserModel.updateOne(
+        //   { _id: user._id, "providers.providerId": fbUser.uid },
+        //   {
+        //     $set: {
+        //       "providers.$.displayName": authData.displayName,
+        //       "providers.$.photoURL": authData.photoURL,
+        //       "providers.$.isVerified": authData.isVerified,
+        //     },
+        //   }
+        // );
       } else {
-        user = await UserModel.create({ providers: [authData] });
+        user = await UserModel.create({ providers: [authData], metadata: {} });
+        console.log("user----->", user);
       }
       // 5) Create session
       const sessionToken = await req.server.createSession(user._id.toString());

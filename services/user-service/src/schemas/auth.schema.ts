@@ -48,7 +48,7 @@ export const googleSignInSchema: FastifySchema = {
             createdAt: { type: "string", format: "date-time" },
             updatedAt: { type: "string", format: "date-time" },
           },
-          required: ["_id", "providers", "metadata", "createdAt", "updatedAt"],
+          required: ["_id", "providers", "createdAt", "updatedAt"],
         },
         sessionToken: { type: "string" },
         expiresIn: { type: "integer" },
@@ -74,46 +74,46 @@ export const linkPhoneSchema: FastifySchema = {
   //   },
   // },
   body: {
-    type: 'object',
+    type: "object",
     required: [
-      'uid',
-      'isEmailVerified',
-      'isAnonymous',
-      'metadata',
-      'providerData'
+      "uid",
+      "isEmailVerified",
+      "isAnonymous",
+      "metadata",
+      "providerData",
     ],
     properties: {
-      uid: { type: 'string' },
-      displayName: { type: 'string', nullable: true },
-      email: { type: 'string', format: 'email', nullable: true },
-      isEmailVerified: { type: 'boolean' },
-      isAnonymous: { type: 'boolean' },
+      uid: { type: "string" },
+      displayName: { type: "string", nullable: true },
+      email: { type: "string", format: "email", nullable: true },
+      isEmailVerified: { type: "boolean" },
+      isAnonymous: { type: "boolean" },
       metadata: {
-        type: 'object',
-        required: ['creationTime', 'lastSignInTime'],
+        type: "object",
+        required: ["creationTime", "lastSignInTime"],
         properties: {
-          creationTime: { type: 'string', format: 'date-time' },
-          lastSignInTime: { type: 'string', format: 'date-time' }
-        }
+          creationTime: { type: "string", format: "date-time" },
+          lastSignInTime: { type: "string", format: "date-time" },
+        },
       },
-      phoneNumber: { type: ['string', 'null'] },
-      photoURL: { type: 'string', nullable: true },
+      phoneNumber: { type: ["string", "null"] },
+      photoURL: { type: "string", nullable: true },
       providerData: {
-        type: 'array',
+        type: "array",
         items: {
-          type: 'object',
-          required: ['providerId', 'uid'],
+          type: "object",
+          required: ["providerId", "uid"],
           properties: {
-            providerId: { type: 'string' },
-            uid: { type: 'string' },
-            email: { type: 'string', format: 'email', nullable: true },
-            phoneNumber: { type: ['string', 'null'] },
-            photoURL: { type: 'string', nullable: true },
-            displayName: { type: 'string', nullable: true }
-          }
-        }
-      }
-    }
+            providerId: { type: "string" },
+            uid: { type: "string" },
+            email: { type: "string", format: "email", nullable: true },
+            phoneNumber: { type: ["string", "null"] },
+            photoURL: { type: "string", nullable: true },
+            displayName: { type: "string", nullable: true },
+          },
+        },
+      },
+    },
   },
   response: {
     200: {

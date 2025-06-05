@@ -46,7 +46,7 @@ export interface IAuthProvider {
 export interface IUser extends Document<Types.ObjectId> {
   // _id: mongoose.Schema.Types.ObjectId;
   providers: IAuthProvider[];
-  metadata: Record<string, any>; // extensible field for custom data
+  metadata?: Record<string, any>; // extensible field for custom data
   firstName?: string;
   middleName?: string;
   lastName?: string;
