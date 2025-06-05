@@ -58,57 +58,28 @@ export const linkAccountSchema: FastifySchema = {
   },
 };
 
-const coordinatesProps = {
-  type: "object",
-  properties: {
-    latitude: { type: "number" },
-    longitude: { type: "number" },
-  },
-  required: ["latitude", "longitude"],
-};
-
-const locationSchema = {
-  type: "object",
-  properties: {
-    address: { type: "string" },
-    name: { type: "string", nullable: true },
-    coordinates: coordinatesProps,
-    isAirport: {
-      type: ["integer", "null"],
-      description: "Set to 1 if this location is the airport pickup/dropoff",
-    },
-  },
-  required: ["address", "coordinates"],
-};
-
-const routeSchema = {
-  type: "object",
-  properties: {
-    startDate: {
-      type: "string",
-      format: "date",
-    },
-    startTime: {
-      type: "string",
-      pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
-    },
-    source: locationSchema,
-    destination: locationSchema,
-  },
-  required: ["startDate", "startTime", "source", "destination"],
-};
-
 export const getFaresSchema: FastifySchema = {
   description:
     "Fetch fare quotes (outstation, airport, urban, or rental).  \n" +
     '- **outstation**: requires `subType` = `"oneWay"` or `"roundTrip"`, and if `"roundTrip"`, a `returnDate`.  \n' +
-    '- **airport**: requires `subType` = `"pickup"` or `"dropOff"`, plus `isAirport` in one leg.  \n' +
+    '- **airport**: requires `subType` = `"pickup"` or `"dropOff"`.  \n' +
     "- **urban**: treated like a local (one‐way) trip.  \n" +
     "- **rental**: one‐leg, same source/destination (day rental code).",
   tags: ["Aggregators"],
   body: {
     type: "object",
-    required: ["tripType", "vehicleType", "routes"],
+    required: [
+      "tripType",
+      "fromAddress",
+      "fromLat",
+      "fromLng",
+      "toAddress",
+      "toLat",
+      "toLng",
+      "startDate",
+      "startTime",
+      "vehicleType",
+    ],
     properties: {
       tripType: {
         type: "string",
@@ -126,26 +97,62 @@ export const getFaresSchema: FastifySchema = {
         type: "string",
         nullable: true,
         description:
-          'Only for `tripType="outstation" && subType="roundTrip"`, format `YYYY-MM-DD HH:MM:SS`',
+          'Only if `tripType="outstation" && subType="roundTrip"`, format `YYYY-MM-DD HH:MM:SS`',
+        pattern:
+          "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\s[0-1][0-9]:[0-5][0-9]:[0-5][0-9]$",
       },
+
+      fromAddress: {
+        type: "string",
+        description: "Pickup address",
+      },
+      fromLat: {
+        type: "number",
+        description: "Pickup latitude",
+      },
+      fromLng: {
+        type: "number",
+        description: "Pickup longitude",
+      },
+
+      toAddress: {
+        type: "string",
+        description: "Dropoff address",
+      },
+      toLat: {
+        type: "number",
+        description: "Dropoff latitude",
+      },
+      toLng: {
+        type: "number",
+        description: "Dropoff longitude",
+      },
+
+      startDate: {
+        type: "string",
+        format: "date",
+        description: "Trip start date (`YYYY-MM-DD`)",
+      },
+      startTime: {
+        type: "string",
+        pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+        description: "Trip start time (`HH:MM:SS`)",
+      },
+
       vehicleType: {
         type: "string",
         enum: ["hatchback", "sedan", "suv", "all"],
         description: "`hatchback` | `sedan` | `suv` | `all`",
       },
-      routes: {
-        type: "array",
-        minItems: 1,
-        items: routeSchema,
-        description:
-          "One or more legs.  \n" +
-          '- **outstation / roundTrip**: exactly 2 legs if `subType="roundTrip"`, otherwise 1.  \n' +
-          "- **airport**: 1 leg with `isAirport` on source (for pickup) or destination (for dropOff).  \n" +
-          "- **urban**: 1 leg.  \n" +
-          "- **rental**: 1 leg where source and destination are identical.",
+
+      passengers: {
+        type: "integer",
+        minimum: 1,
+        description: "Number of passengers (optional)",
       },
     },
   },
+
   response: {
     200: {
       description: "Array of normalized fare quotes.",
