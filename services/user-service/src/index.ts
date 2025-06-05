@@ -12,7 +12,7 @@ import userRoutes from "./routes/user.routes";
 import favoritesRoutes from "./routes/favorites.routes";
 import firebasePlugin from "./plugins/firebase";
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const app = Fastify({ logger: true });
 
 // Register plugins

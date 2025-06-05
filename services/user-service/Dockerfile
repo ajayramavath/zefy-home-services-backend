@@ -28,7 +28,7 @@ RUN yarn workspace @zf/user-service build
 WORKDIR /zefy-backend/services/user-service
 
 # 10) Expose HTTP port
-EXPOSE 3001
+EXPOSE 3000
 
 # 11) Launch the compiled service
 CMD ["node", "dist/index.js"]

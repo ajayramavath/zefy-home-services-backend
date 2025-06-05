@@ -67,13 +67,26 @@ services:
     env_file:
       - ./services/user-service/.env
     ports:
-      - "3001:3001"
+      - "3001:3000"
     # Mount your Firebase service account key into the container
     volumes:
       - ./services/user-service/secrets/zefy-30706-c8da4feed63f.json:/secrets/zefy-30706-c8da4feed63f.json:ro
     # Tell the Admin SDK where to find it
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/zefy-30706-c8da4feed63f.json
+  aggregator-service:
+    build:
+      context: .
+      dockerfile: services/aggregator-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    env_file:
+      - ./services/aggregator-service/.env
+    ports:
+      - "3002:3000"
 
 volumes:
   mongo-data:

@@ -11,7 +11,7 @@ import {
 import registryPlugin from "./plugins/registry";
 import aggregatorRoutes from "./routes/aggregator.routes";
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const app = Fastify({ logger: true });
 
 // Register plugins
@@ -33,7 +33,7 @@ app.register(swagger, {
       description: "Gateway + aggregation endpoints",
       version: "1.0.0",
     },
-    servers: [{ url: "http://localhost:3002", description: "Local dev" }],
+    servers: [{ url: "http://localhost:3000", description: "Local dev" }],
   },
 
   // you can also pass `refResolver`, `security`, `components`, etc.

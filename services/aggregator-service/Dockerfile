@@ -28,7 +28,7 @@ RUN yarn workspace @zf/aggregator-service build
 WORKDIR /zefy-backend/services/aggregator-service
 
 # 10) Expose HTTP port
-EXPOSE 3002
+EXPOSE 3000
 
 # 11) Launch the compiled service
 CMD ["node", "dist/index.js"]
