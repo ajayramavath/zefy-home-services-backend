@@ -58,6 +58,46 @@ export const linkAccountSchema: FastifySchema = {
   },
 };
 
+const coordinatesProps = {
+  type: "object",
+  properties: {
+    latitude: { type: "number" },
+    longitude: { type: "number" },
+  },
+  required: ["latitude", "longitude"],
+};
+
+const locationSchema = {
+  type: "object",
+  properties: {
+    address: { type: "string" },
+    name: { type: "string", nullable: true },
+    coordinates: coordinatesProps,
+    isAirport: {
+      type: ["integer", "null"],
+      description: "Set to 1 if this location is the airport pickup/dropoff",
+    },
+  },
+  required: ["address", "coordinates"],
+};
+
+const routeSchema = {
+  type: "object",
+  properties: {
+    startDate: {
+      type: "string",
+      format: "date",
+    },
+    startTime: {
+      type: "string",
+      pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+    },
+    source: locationSchema,
+    destination: locationSchema,
+  },
+  required: ["startDate", "startTime", "source", "destination"],
+};
+
 export const getFaresSchema: FastifySchema = {
   description:
     "Fetch fare quotes (outstation, airport, urban, or rental).  \n" +
@@ -98,8 +138,6 @@ export const getFaresSchema: FastifySchema = {
         nullable: true,
         description:
           'Only if `tripType="outstation" && subType="roundTrip"`, format `YYYY-MM-DD HH:MM:SS`',
-        pattern:
-          "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\s[0-1][0-9]:[0-5][0-9]:[0-5][0-9]$",
       },
 
       fromAddress: {
@@ -135,7 +173,6 @@ export const getFaresSchema: FastifySchema = {
       },
       startTime: {
         type: "string",
-        pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
         description: "Trip start time (`HH:MM:SS`)",
       },
 
