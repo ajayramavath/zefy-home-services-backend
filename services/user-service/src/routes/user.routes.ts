@@ -10,17 +10,25 @@ export default async function userRoutes(app: FastifyInstance) {
   //   return reply.send(users);
   // });
 
-  // app.get(
-  //   "/:id",
-  //   async (
-  //     req: FastifyRequest<{ Params: { id: string } }>,
-  //     reply: FastifyReply
-  //   ) => {
-  //     const user = await User.findById(req.params.id).lean();
-  //     if (!user) return reply.status(404).send({ message: "User not found" });
-  //     return reply.send(user);
-  //   }
-  // );
+  app.get(
+    "/:id",
+    async (
+      req: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply
+    ) => {
+      const user = await User.findById(req.params.id).lean();
+      if (!user) return reply.status(404).send({ message: "User not found" });
+      let data = {
+        firstName: user.firstName
+          ? user.firstName
+          : user.providers[0].displayName,
+        lastName: user.lastName ? user.lastName : "",
+        email: user.providers[0].email || "",
+        phoneNumber: user.providers[0].phoneNumber || "",
+      };
+      return reply.send(data);
+    }
+  );
 
   // API to validate google authentication, fetch user record and store it in the database
   app.post(

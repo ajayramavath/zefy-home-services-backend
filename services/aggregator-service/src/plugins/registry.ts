@@ -8,7 +8,7 @@ export default fp(async (app) => {
   const adapters: Record<string, BaseAggregator> = {
     // uber: new UberAdapter(app.config.UBER_API_KEY),
     // ola:  new OlaAdapter(app.config.OLA_CLIENT_ID, app.config.OLA_SECRET),
-    gozo: new GozoAdapter("yes"),
+    gozo: new GozoAdapter("yes", "http://user-service:3000"),
   };
   app.decorate("aggregators", adapters);
 });

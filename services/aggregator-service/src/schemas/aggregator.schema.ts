@@ -237,3 +237,133 @@ export const getFaresSchema: FastifySchema = {
     },
   },
 };
+
+export const createBookingSchema: FastifySchema = {
+  body: {
+    type: "object",
+    required: [
+      "tripType",
+      "fromAddress",
+      "fromLat",
+      "fromLng",
+      "toAddress",
+      "toLat",
+      "toLng",
+      "startDate",
+      "startTime",
+      "vehicleType",
+      "aggregator",
+      "price",
+      "currency",
+      "estimatedTimeMinutes",
+      "userId",
+    ],
+    properties: {
+      tripType: {
+        type: "string",
+        description:
+          "Trip type (e.g., outstation, airport, urban, dayRental4, dayRental8, dayRental12)",
+      },
+      subType: {
+        type: "string",
+        description:
+          "Only required if tripType is 'outstation' (oneWay/roundTrip) or 'airport' (pickup/dropOff)",
+      },
+      returnDate: {
+        type: "string",
+        format: "date-time",
+        description:
+          "Only required when tripType is 'outstation' and subType is 'roundTrip'. Format: YYYY-MM-DD HH:MM:SS",
+      },
+      fromAddress: { type: "string" },
+      fromLat: { type: "number" },
+      fromLng: { type: "number" },
+      toAddress: { type: "string" },
+      toLat: { type: "number" },
+      toLng: { type: "number" },
+      startDate: {
+        type: "string",
+        format: "date",
+        description: "Format: YYYY-MM-DD",
+      },
+      startTime: {
+        type: "string",
+        pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+        description: "Format: HH:MM:SS",
+      },
+      vehicleType: {
+        type: "string",
+        enum: ["hatchback", "sedan", "suv", "all"],
+      },
+      passengers: {
+        type: "integer",
+        minimum: 1,
+        description: "Number of passengers",
+      },
+      aggregator: {
+        type: "string",
+        description: "Name of the aggregator (e.g., 'gozo')",
+      },
+      price: {
+        type: "number",
+        description: "Quoted total fare (advanceReceived will be set to 0)",
+      },
+      currency: {
+        type: "string",
+        description: "Currency code (e.g., 'INR')",
+      },
+      estimatedTimeMinutes: {
+        type: "integer",
+        description: "Estimated trip duration in minutes",
+      },
+      userId: {
+        type: "string",
+        description: "User’s ID in the user‐service",
+      },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        bookingId: {
+          type: "string",
+          description: "Gozo’s confirmed booking ID",
+        },
+        referenceId: {
+          type: "string",
+          description: "Reference ID passed to Gozo",
+        },
+        statusDesc: {
+          type: "string",
+          description: "Status description (e.g., 'Confirmed')",
+        },
+        statusCode: {
+          type: "integer",
+          description: "Numeric status code (e.g., 2)",
+        },
+      },
+    },
+    400: {
+      type: "object",
+      properties: {
+        errorCode: {
+          type: "integer",
+          description: "Gozo’s error code (from hold or confirm)",
+        },
+        errors: {
+          type: "array",
+          items: { type: "string" },
+          description: "List of error messages",
+        },
+      },
+    },
+    500: {
+      type: "object",
+      properties: {
+        error: { type: "string" },
+        details: { type: "string" },
+      },
+    },
+  },
+};

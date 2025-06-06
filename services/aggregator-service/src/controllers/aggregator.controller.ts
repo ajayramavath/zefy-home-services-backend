@@ -1,7 +1,11 @@
-import { FastifyReply, FastifyRequest } from 'fastify';
-import mongoose from 'mongoose';
-import AggregatorAccountModel from '../models/AggregatorAccount.model';
-import { FareRequest, FareResponse } from '@zf/types'; // or '@ms/types'
+import { FastifyReply, FastifyRequest } from "fastify";
+import mongoose from "mongoose";
+import AggregatorAccountModel from "../models/AggregatorAccount.model";
+import { FareRequest, FareResponse } from "@zf/types"; // or '@ms/types'
+import {
+  CreateBookingRequest,
+  BookingResult,
+} from "../aggregators/BaseAggregator";
 
 interface LinkAccountBody {
   userId: string;
@@ -11,6 +15,9 @@ interface LinkAccountBody {
 interface GetFaresBody extends FareRequest {
   // Same fields as FareRequest: tripType, subType?, fromAddress, toAddress, startDate, startTime, vehicleType, fromLat, fromLng, toLat, toLng, passengers?
 }
+
+// 1) New interface for createBooking body
+interface CreateBookingBody extends CreateBookingRequest {}
 
 export class AggregatorController {
   /**
@@ -26,10 +33,10 @@ export class AggregatorController {
 
     // 1) Validate input
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return reply.status(400).send({ error: 'Invalid userId' });
+      return reply.status(400).send({ error: "Invalid userId" });
     }
     if (!req.server.aggregators?.[aggregator]) {
-      return reply.status(400).send({ error: 'Unknown aggregator' });
+      return reply.status(400).send({ error: "Unknown aggregator" });
     }
 
     try {
@@ -48,11 +55,11 @@ export class AggregatorController {
         // unique index error => already linked
         return reply
           .status(409)
-          .send({ error: 'This aggregator is already linked for this user' });
+          .send({ error: "This aggregator is already linked for this user" });
       }
       return reply
         .status(500)
-        .send({ error: 'Failed to link aggregator account' });
+        .send({ error: "Failed to link aggregator account" });
     }
   }
 
@@ -79,14 +86,15 @@ export class AggregatorController {
       // User has linked accounts → call only those
       accountsToQuery = linkedAccounts.map((acc) => ({
         aggregator: acc.aggregator,
-        creds: acc.creds
+        creds: acc.creds,
       }));
     } else {
+      console.log(req.server.aggregators);
       // No linked accounts → call all adapters, with empty creds
       const allAdapterKeys = Object.keys(req.server.aggregators || {});
       accountsToQuery = allAdapterKeys.map((name) => ({
         aggregator: name,
-        creds: {} // empty, so adapter uses its default/API-key logic
+        creds: {}, // empty, so adapter uses its default/API-key logic
       }));
     }
 
@@ -98,6 +106,7 @@ export class AggregatorController {
           // Skip if the adapter isn't actually registered
           return Promise.resolve([]);
         }
+        console.log(creds);
         return adapter.getFares(creds, req.body);
       }
     );
@@ -114,7 +123,65 @@ export class AggregatorController {
       req.log.error(err);
       return reply
         .status(500)
-        .send({ error: 'Error fetching fares from aggregators' });
+        .send({ error: "Error fetching fares from aggregators" });
+    }
+  }
+
+  /**
+   * POST /bookings
+   * Body: CreateBookingRequest fields
+   * Single‐aggregator booking: calls that adapter’s createBooking(...)
+   */
+  static async createBooking(
+    req: FastifyRequest<{ Body: CreateBookingBody }>,
+    reply: FastifyReply
+  ) {
+    const userId = req.session.userId;
+
+    // 1) Validate that aggregator exists in server
+    const { aggregator } = req.body;
+    // if (!req.server.aggregators?.[aggregator]) {
+    //   return reply.status(400).send({ error: "Unknown aggregator" });
+    // }
+
+    // // 2) Fetch linked credentials for this user + aggregator
+    let creds: any = {};
+    // try {
+    //   const accountDoc = await AggregatorAccountModel.findOne({
+    //     userId: new mongoose.Types.ObjectId(userId),
+    //     aggregator,
+    //   }).lean();
+    //   if (accountDoc) {
+    //     creds = accountDoc.creds;
+    //   }
+    // } catch (err: any) {
+    //   req.log.error(err);
+    //   return reply
+    //     .status(500)
+    //     .send({ error: "Failed to fetch linked aggregator account" });
+    // }
+
+    // 3) Call the adapter’s createBooking(...)
+    try {
+      const adapter = req.server.aggregators![aggregator] || aggregator;
+      const bookingResult: BookingResult = await adapter.createBooking(
+        creds,
+        req.body
+      );
+      // bookingResult: { bookingId, referenceId, statusDesc, statusCode }
+      return reply.status(200).send(bookingResult);
+    } catch (err: any) {
+      // 4) Handle HoldError / ConfirmError
+      if (err.type === "HoldError" || err.type === "ConfirmError") {
+        return reply
+          .status(400)
+          .send({ errorCode: err.errorCode, errors: err.errors });
+      }
+      // 5) Unexpected error
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
     }
   }
 }
