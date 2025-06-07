@@ -76,3 +76,8 @@ export interface Credentials {
   apiKey?: string;
   // [key: string]: unknown;
 }
+
+export interface BookingDetailsBody {
+
+  universalBookingId: string
+}

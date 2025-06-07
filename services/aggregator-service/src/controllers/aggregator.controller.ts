@@ -1,11 +1,14 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import mongoose from "mongoose";
 import AggregatorAccountModel from "../models/AggregatorAccount.model";
-import { FareRequest, FareResponse } from "@zf/types"; // or '@ms/types'
+
+import { FareRequest, FareResponse, BookingDetailsBody } from "@zf/types"; // or '@ms/types'
 import {
   CreateBookingRequest,
   BookingResult,
+  BookingDetailsResult
 } from "../aggregators/BaseAggregator";
+import { BookingModel } from "../models/Booking.model";
 
 interface LinkAccountBody {
   userId: string;
@@ -17,7 +20,7 @@ interface GetFaresBody extends FareRequest {
 }
 
 // 1) New interface for createBooking body
-interface CreateBookingBody extends CreateBookingRequest {}
+interface CreateBookingBody extends CreateBookingRequest { }
 
 export class AggregatorController {
   /**
@@ -182,6 +185,60 @@ export class AggregatorController {
       return reply
         .status(500)
         .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+    }
+  }
+
+  /**
+   * POST /booking/details
+   */
+  static async getBookingDetails(
+    req: FastifyRequest<{ Body: BookingDetailsBody }>,
+    reply: FastifyReply
+  ) {
+    const userId = req.session.userId;
+    const { universalBookingId } = req.body;
+
+    let bookingDoc;
+    try {
+      bookingDoc = await BookingModel.findOne({ universalBookingId }).lean();
+      if (!bookingDoc) {
+        return reply.status(404).send({ error: "Booking not found" });
+      }
+    } catch (err: any) {
+      req.log.error(err);
+      return reply.status(500).send({ error: "DB_ERROR", details: err.message });
+    }
+
+    const adapterName = bookingDoc.adapter;
+    const adapter = req.server.aggregators?.[adapterName];
+    if (!adapter) {
+      return reply.status(500).send({ error: "Adapter not loaded" });
+    }
+
+    let creds: any = {};
+    // try {
+    //   const accountDoc = await AggregatorAccountModel.findOne({
+    //     userId: new mongoose.Types.ObjectId(userId),
+    //     aggregator: adapterName,
+    //   }).lean();
+    //   if (accountDoc) creds = accountDoc.creds;
+    // } catch (err: any) {
+    //   req.log.error(err);
+    // }
+
+    try {
+      const details: BookingDetailsResult = await adapter.getBookingDetails(
+        creds,
+        universalBookingId,
+        userId
+      );
+      return reply.send(details);
+    } catch (err: any) {
+      if (err.type === "DetailsError") {
+        return reply.status(400).send({ errorCode: err.errorCode, errors: err.errors });
+      }
+      req.log.error(err);
+      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
     }
   }
 }

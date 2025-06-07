@@ -29,9 +29,10 @@ export interface IUniversalBooking extends Document {
   // Common fields you may want to index/search on:
   tripType: number;
   cabType: number;
+  vehicleType: string;
   startDate: string; // "YYYY-MM-DD"
   startTime: string; // "HH:mm:ss"
-
+  raw?: any;
   // Timestamps:
   createdAt: Date;
   updatedAt: Date;
@@ -58,8 +59,12 @@ const BookingSchema = new Schema<IUniversalBooking>(
     cabType: { type: Number, required: true },
     startDate: { type: String, required: true },
     startTime: { type: String, required: true },
+    raw: { type: Schema.Types.Mixed }
   },
   { timestamps: true }
 );
+
+BookingSchema.index({ universalBookingId: 1 });
+BookingSchema.index({ adapterBookingId: 1 });
 
 export const BookingModel = model<IUniversalBooking>("Booking", BookingSchema);

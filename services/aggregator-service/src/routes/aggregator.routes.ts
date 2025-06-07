@@ -4,6 +4,7 @@ import {
   linkAccountSchema,
   getFaresSchema,
   createBookingSchema,
+  getBookingDetailsSchema,
 } from "../schemas/aggregator.schema";
 
 export default async function aggregatorRoutes(app: FastifyInstance) {
@@ -19,5 +20,11 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
     "/api/bookings",
     { schema: createBookingSchema },
     AggregatorController.createBooking
+  );
+
+  app.post(
+    "/api/booking/details",
+    { schema: getBookingDetailsSchema },
+    AggregatorController.getBookingDetails
   );
 }

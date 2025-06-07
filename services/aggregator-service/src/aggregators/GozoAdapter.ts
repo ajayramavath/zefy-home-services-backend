@@ -14,6 +14,7 @@ import {
   OutstationSubType,
   AirportSubType,
 } from "@zf/types"; // or '@zf/types'
+import { BookingModel, BookingStatus } from "../models/Booking.model";
 
 interface GozoHoldSuccess {
   bookingId: string;
@@ -382,8 +383,8 @@ export default class GozoAdapter extends BaseAggregator {
       const payload = err.response?.data;
       throw new Error(
         `GozoAdapter: API request failed` +
-          (status ? ` (status ${status})` : "") +
-          (payload ? ` – ${JSON.stringify(payload)}` : "")
+        (status ? ` (status ${status})` : "") +
+        (payload ? ` – ${JSON.stringify(payload)}` : "")
       );
     }
   }
@@ -414,7 +415,7 @@ export default class GozoAdapter extends BaseAggregator {
     }
 
     // 2) Generate a unique referenceId for Gozo
-    const referenceId = `GOZO-${uuidv4()}`;
+    const referenceId = `ZFY${uuidv4()}`;
 
     // 3) Map FareRequest + extras → Gozo’s Hold payload
     let gozoTripType: number;
@@ -472,25 +473,8 @@ export default class GozoAdapter extends BaseAggregator {
     }
 
     // 4) Convert vehicleType → Gozo’s numeric array
-    let gozoCabType: number[];
-    switch (req.vehicleType) {
-      case "hatchback":
-        gozoCabType = [1, 72];
-        break;
-      case "sedan":
-        gozoCabType = [3, 5, 73];
-        break;
-      case "suv":
-        gozoCabType = [2, 6, 74];
-        break;
-      case "all":
-        gozoCabType = [1, 2, 3, 5, 6, 14, 15, 16, 73, 74, 75];
-        break;
-      default:
-        throw new Error(
-          `GozoAdapter.createBooking: unsupported vehicleType="${req.vehicleType}"`
-        );
-    }
+    let gozoCabType: number = req.vehicleCode;
+
 
     // 5) Build Gozo’s “routes” array
     const routes: Array<{
@@ -643,21 +627,20 @@ export default class GozoAdapter extends BaseAggregator {
     let holdRes: GozoHoldResponse;
     try {
       const response = await axios.post<GozoHoldResponse>(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/getQuote",
+        "http://gozotech2.ddns.net:6183/api/cpapi/booking/hold",
         holdBody,
         {
           headers: {
             Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
             "Content-Type": "application/json",
-            "x-api-key": this.apiKey,
+            // "x-api-key": this.apiKey,
           },
         }
       );
       holdRes = response.data;
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo hold (getQuote) failed – ${
-          err.response?.status || ""
+        `createBooking: Gozo hold (getQuote) failed – ${err.response?.status || ""
         } ${err.response?.data || err.message}`
       );
     }
@@ -672,6 +655,31 @@ export default class GozoAdapter extends BaseAggregator {
 
     // 8) Extract Gozo’s “bookingId” from hold response
     const gozoBookingId = holdRes.data.bookingId;
+    let vehicleType;
+    if ([1, 72].includes(req.vehicleCode)) {
+      vehicleType = "hatchback";
+    } else if ([3, 5, 73].includes(req.vehicleCode)) {
+      vehicleType = "sedan";
+    } else if ([2, 6, 74].includes(req.vehicleCode)) {
+      vehicleType = "suv";
+    } else {
+      throw new Error(`GozoAdapter: unsupported vehicleCode="${req.vehicleCode}"`);
+    }
+
+
+    await BookingModel.create({
+      universalBookingId: referenceId,
+      adapter: this.name,
+      adapterBookingId: gozoBookingId,
+      status: BookingStatus.CREATED,
+      requestPayload: req,
+      holdResponse: holdRes.data,
+      tripType: gozoTripType,
+      cabType: gozoCabType,
+      vehicleType: req.vehicleType,     // or store the full array if you prefer
+      startDate: req.startDate,
+      startTime: req.startTime,
+    });
 
     // 9) Call Gozo’s Confirm endpoint
     let confirmRes: GozoConfirmResponse;
@@ -683,15 +691,14 @@ export default class GozoAdapter extends BaseAggregator {
           headers: {
             Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
             "Content-Type": "application/json",
-            "x-api-key": this.apiKey,
+            // "x-api-key": this.apiKey,
           },
         }
       );
       confirmRes = response.data;
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${
-          err.response?.data || err.message
+        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${err.response?.data || err.message
         }`
       );
     }
@@ -703,14 +710,71 @@ export default class GozoAdapter extends BaseAggregator {
         errors: confirmRes.errors || ["Unknown confirm error"],
       };
     }
-
+    await BookingModel.findOneAndUpdate({ universalBookingId: referenceId }, {
+      status: "confirmed",
+      confirmResponse: confirmRes
+    })
     // 10) Return a BookingResult on success
     return {
       bookingId: confirmRes.data.bookingId,
       referenceId: confirmRes.data.referenceId,
       statusDesc: confirmRes.data.statusDesc,
       statusCode: confirmRes.data.statusCode,
-      // …you can spread any other confirmRes.data fields if needed…
+
     };
+  }
+
+  async getBookingDetails(
+    creds: Credentials,
+    universalBookingId: string,
+    userId: string
+  ): Promise<any> {
+    // 1) Retrieve the saved booking to get Gozo's bookingId
+    const booking = await BookingModel.findOne({ universalBookingId }).lean();
+    if (!booking || !booking.adapterBookingId) {
+      throw new Error(`Booking not found for id ${universalBookingId}`);
+    }
+    const gozoBookingId = booking.adapterBookingId;
+
+    // 2) Call Gozo's Details endpoint
+    let detailRes: { success: boolean; data?: any; errorCode?: number; errors?: string[] };
+    try {
+      const response = await axios.post(
+        "http://gozotech2.ddns.net:6183/api/cpapi/booking/details",
+        { bookingId: gozoBookingId },
+        {
+          headers: {
+            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            "Content-Type": "application/json",
+            "x-api-key": this.apiKey,
+          },
+        }
+      );
+      detailRes = response.data;
+    } catch (err: any) {
+      throw new Error(
+        `getBookingDetails: Gozo details API failed – ${err.response?.status || ""} ${err.response?.data || err.message}`
+      );
+    }
+
+    if (!detailRes.success || !detailRes.data) {
+      throw {
+        type: "DetailsError",
+        errorCode: detailRes.errorCode || 500,
+        errors: detailRes.errors || ["Unknown details error"],
+      };
+    }
+
+    // 3) Format response for our app
+    const raw = detailRes.data;
+    const formatted = {
+      userId,
+      universalBookingId,
+      tripType: booking.requestPayload.tripType,
+      subType: booking.requestPayload.subType || null,
+      ...raw,
+    };
+
+    return formatted;
   }
 }
