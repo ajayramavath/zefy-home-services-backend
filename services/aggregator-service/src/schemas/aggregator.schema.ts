@@ -2,11 +2,10 @@
 import { FastifySchema } from "fastify";
 
 /**
- * LinkAccountBody: { userId: string, aggregator: string }
- * Response: { success: boolean } or errors
+ * Link an external aggregator account to a user
  */
 export const linkAccountSchema: FastifySchema = {
-  description: "Link an external aggregator account to the given user",
+  description: "Link an external aggregator (e.g., Uber, Ola, Gozo) to the authenticated user",
   tags: ["Aggregators"],
   body: {
     type: "object",
@@ -14,405 +13,227 @@ export const linkAccountSchema: FastifySchema = {
     properties: {
       userId: {
         type: "string",
-        description: "Mongo ObjectId of the user",
+        description: "MongoDB ObjectId of the user",
+        example: "64f9eae7c1d3d6c97a14c123"
       },
       aggregator: {
         type: "string",
-        description: 'Key of the aggregator (e.g. "uber", "ola", "gozo")',
-      },
-    },
+        description: "Key of the aggregator to link",
+        example: "gozo"
+      }
+    }
   },
   response: {
     200: {
-      description: "Account linked successfully",
+      description: "Successfully linked aggregator",
       type: "object",
       properties: {
-        success: { type: "boolean" },
+        success: { type: "boolean", example: true }
       },
-      required: ["success"],
+      required: ["success"]
     },
     400: {
-      description: "Bad request (invalid userId or unknown aggregator)",
+      description: "Invalid input (bad userId or unknown aggregator)",
       type: "object",
       properties: {
-        error: { type: "string" },
+        error: { type: "string", example: "Invalid userId" }
       },
-      required: ["error"],
+      required: ["error"]
     },
     409: {
-      description: "Conflict (aggregator already linked for this user)",
+      description: "Aggregator already linked for this user",
       type: "object",
       properties: {
-        error: { type: "string" },
+        error: { type: "string", example: "This aggregator is already linked for this user" }
       },
-      required: ["error"],
+      required: ["error"]
     },
     500: {
-      description: "Internal server error",
+      description: "Server error when linking aggregator",
       type: "object",
       properties: {
-        error: { type: "string" },
+        error: { type: "string", example: "Failed to link aggregator account" }
       },
-      required: ["error"],
-    },
-  },
+      required: ["error"]
+    }
+  }
 };
 
 const coordinatesProps = {
   type: "object",
   properties: {
-    latitude: { type: "number" },
-    longitude: { type: "number" },
+    latitude: { type: "number", example: 28.6139 },
+    longitude: { type: "number", example: 77.2090 }
   },
-  required: ["latitude", "longitude"],
+  required: ["latitude", "longitude"]
 };
 
 const locationSchema = {
   type: "object",
   properties: {
-    address: { type: "string" },
-    name: { type: "string", nullable: true },
+    address: { type: "string", example: "Delhi Airport" },
+    name: { type: "string", nullable: true, example: null },
     coordinates: coordinatesProps,
-    isAirport: {
-      type: ["integer", "null"],
-      description: "Set to 1 if this location is the airport pickup/dropoff",
-    },
+    isAirport: { type: ["integer", "null"], example: 1 }
   },
-  required: ["address", "coordinates"],
+  required: ["address", "coordinates"]
 };
 
 const routeSchema = {
   type: "object",
   properties: {
-    startDate: {
-      type: "string",
-      format: "date",
-    },
-    startTime: {
-      type: "string",
-      pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
-    },
+    startDate: { type: "string", format: "date", example: "2025-06-07" },
+    startTime: { type: "string", pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", example: "18:30:00" },
     source: locationSchema,
-    destination: locationSchema,
+    destination: locationSchema
   },
-  required: ["startDate", "startTime", "source", "destination"],
+  required: ["startDate", "startTime", "source", "destination"]
 };
 
+/**
+ * Fetch fare quotes from linked aggregators
+ */
 export const getFaresSchema: FastifySchema = {
-  description:
-    "Fetch fare quotes (outstation, airport, urban, or rental).  \n" +
-    '- **outstation**: requires `subType` = `"oneWay"` or `"roundTrip"`, and if `"roundTrip"`, a `returnDate`.  \n' +
-    '- **airport**: requires `subType` = `"pickup"` or `"dropOff"`.  \n' +
-    "- **urban**: treated like a local (one‐way) trip.  \n" +
-    "- **rental**: one‐leg, same source/destination (day rental code).",
+  description: "Request fare quotes for outstation, airport, urban, or rental trips",
   tags: ["Aggregators"],
   body: {
     type: "object",
     required: [
-      "tripType",
-      "fromAddress",
-      "fromLat",
-      "fromLng",
-      "toAddress",
-      "toLat",
-      "toLng",
-      "startDate",
-      "startTime",
-      "vehicleType",
+      "tripType", "fromAddress", "fromLat", "fromLng",
+      "toAddress", "toLat", "toLng", "startDate", "startTime", "vehicleType"
     ],
     properties: {
       tripType: {
-        type: "string",
-        enum: ["outstation", "airport", "urban", "rental"],
-        description: "`outstation` | `airport` | `urban` | `rental`",
+        type: "string", enum: ["outstation", "airport", "urban", "rental"],
+        description: "Type of trip",
+        example: "outstation"
       },
       subType: {
-        type: "string",
-        nullable: true,
-        description:
-          '`"oneWay"` or `"roundTrip"` when `tripType="outstation"`,  \n' +
-          '`"pickup"` or `"dropOff"` when `tripType="airport"`',
+        type: "string", nullable: true,
+        description: "For outstation: 'oneWay' or 'roundTrip'; for airport: 'pickup' or 'dropOff'",
+        example: "oneWay"
       },
       returnDate: {
-        type: "string",
-        nullable: true,
-        description:
-          'Only if `tripType="outstation" && subType="roundTrip"`, format `YYYY-MM-DD HH:MM:SS`',
+        type: "string", nullable: true, format: "date-time",
+        description: "Return date/time for outstation roundTrip",
+        example: "2025-06-08 10:00:00"
       },
-
-      fromAddress: {
-        type: "string",
-        description: "Pickup address",
-      },
-      fromLat: {
-        type: "number",
-        description: "Pickup latitude",
-      },
-      fromLng: {
-        type: "number",
-        description: "Pickup longitude",
-      },
-
-      toAddress: {
-        type: "string",
-        description: "Dropoff address",
-      },
-      toLat: {
-        type: "number",
-        description: "Dropoff latitude",
-      },
-      toLng: {
-        type: "number",
-        description: "Dropoff longitude",
-      },
-
-      startDate: {
-        type: "string",
-        format: "date",
-        description: "Trip start date (`YYYY-MM-DD`)",
-      },
-      startTime: {
-        type: "string",
-        description: "Trip start time (`HH:MM:SS`)",
-      },
-
-      vehicleType: {
-        type: "string",
-        enum: ["hatchback", "sedan", "suv", "all"],
-        description: "`hatchback` | `sedan` | `suv` | `all`",
-      },
-
-      passengers: {
-        type: "integer",
-        minimum: 1,
-        description: "Number of passengers (optional)",
-      },
-    },
+      fromAddress: { type: "string", example: "Shahdara, Delhi" },
+      fromLat: { type: "number", example: 28.6893 },
+      fromLng: { type: "number", example: 77.2919 },
+      toAddress: { type: "string", example: "Agra, UP" },
+      toLat: { type: "number", example: 27.1767 },
+      toLng: { type: "number", example: 78.0081 },
+      startDate: { type: "string", format: "date", example: "2025-06-07" },
+      startTime: { type: "string", pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$", example: "18:30:00" },
+      vehicleType: { type: "string", enum: ["hatchback", "sedan", "suv", "all"], example: "sedan" },
+      passengers: { type: "integer", minimum: 1, nullable: true, example: 2 }
+    }
   },
-
   response: {
     200: {
-      description: "Array of normalized fare quotes.",
+      description: "Array of fare responses",
       type: "object",
       properties: {
         fares: {
           type: "array",
           items: {
             type: "object",
+            required: ["aggregator", "price", "currency", "estimatedTimeMinutes", "vehicleType"],
             properties: {
-              aggregator: { type: "string" },
-              price: { type: "number" },
-              currency: { type: "string" },
-              estimatedTimeMinutes: { type: "integer" },
-              vehicleType: { type: "string" },
-              raw: { type: "object", nullable: true },
-            },
-            required: [
-              "aggregator",
-              "price",
-              "currency",
-              "estimatedTimeMinutes",
-              "vehicleType",
-            ],
-          },
-        },
+              aggregator: { type: "string", example: "gozo" },
+              price: { type: "number", example: 4808 },
+              currency: { type: "string", example: "INR" },
+              estimatedTimeMinutes: { type: "integer", example: 360 },
+              vehicleType: { type: "string", example: "Sedan (Value)" },
+              vehicleCode: { type: "number", example: 3 },
+              raw: { type: "object", nullable: true }
+            }
+          }
+        }
       },
-      required: ["fares"],
+      required: ["fares"]
     },
     400: {
-      description: "Invalid payload (missing or invalid fields).",
+      description: "Invalid request payload",
       type: "object",
       properties: {
-        error: { type: "string" },
+        error: { type: "string", example: "Missing required field: fromAddress" }
       },
-      required: ["error"],
+      required: ["error"]
     },
     500: {
-      description: "Server error while fetching fares.",
+      description: "Server error fetching fares",
       type: "object",
       properties: {
-        error: { type: "string" },
+        error: { type: "string", example: "Error fetching fares from aggregators" }
       },
-      required: ["error"],
-    },
-  },
+      required: ["error"]
+    }
+  }
 };
 
+/**
+ * Create and confirm a booking via aggregator
+ */
 export const createBookingSchema: FastifySchema = {
+  description: "Hold and then confirm a booking with a specified aggregator",
+  tags: ["Aggregators"],
   body: {
     type: "object",
     required: [
-      "tripType",
-      "fromAddress",
-      "fromLat",
-      "fromLng",
-      "toAddress",
-      "toLat",
-      "toLng",
-      "startDate",
-      "startTime",
-      "vehicleType",
-      "aggregator",
-      "price",
-      "currency",
-      "estimatedTimeMinutes",
-      "userId",
-      "vehicleCode"
+      "tripType", "fromAddress", "fromLat", "fromLng",
+      "toAddress", "toLat", "toLng", "startDate", "startTime",
+      "vehicleType", "vehicleCode", "aggregator", "price",
+      "currency", "estimatedTimeMinutes", "userId"
     ],
     properties: {
-      tripType: {
-        type: "string",
-        description:
-          "Trip type (e.g., outstation, airport, urban, dayRental4, dayRental8, dayRental12)",
-      },
-      subType: {
-        type: "string",
-        description:
-          "Only required if tripType is 'outstation' (oneWay/roundTrip) or 'airport' (pickup/dropOff)",
-      },
-      returnDate: {
-        type: "string",
-        format: "date-time",
-        description:
-          "Only required when tripType is 'outstation' and subType is 'roundTrip'. Format: YYYY-MM-DD HH:MM:SS",
-      },
-      fromAddress: { type: "string" },
-      fromLat: { type: "number" },
-      fromLng: { type: "number" },
-      toAddress: { type: "string" },
-      toLat: { type: "number" },
-      toLng: { type: "number" },
-      startDate: {
-        type: "string",
-        format: "date",
-        description: "Format: YYYY-MM-DD",
-      },
-      startTime: {
-        type: "string",
-        pattern: "^([01]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
-        description: "Format: HH:MM:SS",
-      },
-      vehicleType: {
-        type: "string",
-        enum: ["hatchback", "sedan", "suv", "all"],
-      },
-      vehicleCode: {
-        type: "number",
-      },
-      passengers: {
-        type: "integer",
-        minimum: 1,
-        description: "Number of passengers",
-      },
-      aggregator: {
-        type: "string",
-        description: "Name of the aggregator (e.g., 'gozo')",
-      },
-      price: {
-        type: "number",
-        description: "Quoted total fare (advanceReceived will be set to 0)",
-      },
-      currency: {
-        type: "string",
-        description: "Currency code (e.g., 'INR')",
-      },
-      estimatedTimeMinutes: {
-        type: "integer",
-        description: "Estimated trip duration in minutes",
-      },
-      userId: {
-        type: "string",
-        description: "User’s ID in the user‐service",
-      },
-    },
-  },
-  response: {
-    200: {
-      type: "object",
-      properties: {
-        bookingId: {
-          type: "string",
-          description: "Gozo’s confirmed booking ID",
-        },
-        referenceId: {
-          type: "string",
-          description: "Reference ID passed to Gozo",
-        },
-        statusDesc: {
-          type: "string",
-          description: "Status description (e.g., 'Confirmed')",
-        },
-        statusCode: {
-          type: "integer",
-          description: "Numeric status code (e.g., 2)",
-        },
-      },
-    },
-    400: {
-      type: "object",
-      properties: {
-        errorCode: {
-          type: "integer",
-          description: "Gozo’s error code (from hold or confirm)",
-        },
-        errors: {
-          type: "array",
-          items: { type: "string" },
-          description: "List of error messages",
-        },
-      },
-    },
-    500: {
-      type: "object",
-      properties: {
-        error: { type: "string" },
-        details: { type: "string" },
-      },
-    },
-  },
-};
-
-export const getBookingDetailsSchema: FastifySchema = {
-  body: {
-    type: "object",
-    required: ["universalBookingId"],
-    properties: {
-      universalBookingId: {
-        type: "string",
-        description: "The universal booking ID generated by the aggregator"
-      }
+      tripType: { type: "string", example: "outstation" },
+      subType: { type: "string", nullable: true, example: "oneWay" },
+      returnDate: { type: "string", nullable: true, example: "2025-06-08 10:00:00" },
+      fromAddress: { type: "string", example: "Shahdara, Delhi" },
+      fromLat: { type: "number", example: 28.6893 },
+      fromLng: { type: "number", example: 77.2919 },
+      toAddress: { type: "string", example: "Agra, UP" },
+      toLat: { type: "number", example: 27.1767 },
+      toLng: { type: "number", example: 78.0081 },
+      startDate: { type: "string", format: "date", example: "2025-06-07" },
+      startTime: { type: "string", example: "18:30:00" },
+      vehicleType: { type: "string", enum: ["hatchback", "sedan", "suv", "all"], example: "sedan" },
+      vehicleCode: { type: "number", example: 3 },
+      passengers: { type: "integer", example: 2 },
+      aggregator: { type: "string", example: "gozo" },
+      price: { type: "number", example: 4808 },
+      currency: { type: "string", example: "INR" },
+      estimatedTimeMinutes: { type: "integer", example: 360 },
+      userId: { type: "string", example: "64f9eae7c1d3d6c97a14c123" }
     }
   },
   response: {
     200: {
+      description: "Booking confirmed successfully",
       type: "object",
-      additionalProperties: true,
       properties: {
-        userId: { type: "string", description: "User ID from session" },
-        universalBookingId: { type: "string", description: "Universal booking ID" },
-        tripType: { type: "string", description: "Original tripType from booking request" },
-        subType: { type: ["string", "null"], description: "Original subType if applicable" }
-        // other fields returned by Gozo's details API will be included dynamically
+        bookingId: { type: "string", example: "OW101881515" },
+        referenceId: { type: "string", example: "ZFY-123e4567-e89b-12d3-a456-426614174000" },
+        statusDesc: { type: "string", example: "Confirmed" },
+        statusCode: { type: "integer", example: 2 }
       }
     },
     400: {
+      description: "Hold or confirm error",
       type: "object",
       properties: {
-        errorCode: { type: "integer", description: "Error code from Gozo" },
-        errors: { type: "array", items: { type: "string" }, description: "List of error messages" }
-      }
-    },
-    404: {
-      type: "object",
-      properties: {
-        error: { type: "string", description: "Error message, e.g. 'Booking not found'" }
+        errorCode: { type: "integer", example: 104 },
+        errors: { type: "array", items: { type: "string" }, example: ["Departure time should be at least 120 minutes from now."] }
       }
     },
     500: {
+      description: "Internal server error during booking",
       type: "object",
       properties: {
-        error: { type: "string", description: "Error type, e.g. 'INTERNAL_SERVER_ERROR' or 'DB_ERROR'" },
-        details: { type: "string", description: "Detailed error message" }
+        error: { type: "string", example: "INTERNAL_SERVER_ERROR" },
+        details: { type: "string", example: "Failed to fetch user info" }
       }
     }
   }

@@ -48,6 +48,36 @@ export interface BookingDetailsResult {
   [key: string]: any;
 }
 
+
+/**
+ * Cancellation reason object
+ */
+export interface CancellationReason {
+  id: number;
+  text: string;
+  placeholder: string;
+}
+
+/**
+ * Request payload for cancelBooking
+ */
+export interface CancelBookingRequest {
+  aggregator: string;
+  bookingId: string;
+  reasonId: number;
+  reason: string;
+}
+
+/**
+ * Result returned after cancellation
+ */
+export interface CancellationResult {
+  bookingId: string;
+  message: string;
+  cancellationCharge: number;
+  refundAmount: number;
+}
+
 export abstract class BaseAggregator {
   abstract name: string;
   abstract linkAccount(creds: unknown): Promise<Credentials>;
@@ -64,4 +94,12 @@ export abstract class BaseAggregator {
     universalBookingId: string,
     userId: string
   ): Promise<BookingDetailsResult>;
+  abstract getCancellationList(
+    creds: Credentials
+  ): Promise<CancellationReason[]>;
+
+  abstract cancelBooking(
+    creds: Credentials,
+    req: CancelBookingRequest
+  ): Promise<CancellationResult>;
 }

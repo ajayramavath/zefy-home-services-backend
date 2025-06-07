@@ -11,7 +11,7 @@ export default async function userRoutes(app: FastifyInstance) {
   // });
 
   app.get(
-    "/:id",
+    "/getData/:id",
     async (
       req: FastifyRequest<{ Params: { id: string } }>,
       reply: FastifyReply
@@ -26,6 +26,12 @@ export default async function userRoutes(app: FastifyInstance) {
         email: user.providers[0].email || "",
         phoneNumber: user.providers[0].phoneNumber || "",
       };
+      // let data = {
+      //   firstName: "Ravikiran",
+      //   lastName: "Thimmegowda",
+      //   email: "ravikiran.t9110@gmail.com",
+      //   phoneNumber: "9731874579",
+      // }
       return reply.send(data);
     }
   );

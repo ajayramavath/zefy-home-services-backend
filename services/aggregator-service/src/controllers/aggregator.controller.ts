@@ -6,9 +6,12 @@ import { FareRequest, FareResponse, BookingDetailsBody } from "@zf/types"; // or
 import {
   CreateBookingRequest,
   BookingResult,
-  BookingDetailsResult
+  BookingDetailsResult,
+  CancellationReason,
+  CancelBookingRequest,
+  CancellationResult
 } from "../aggregators/BaseAggregator";
-import { BookingModel } from "../models/Booking.model";
+import { BookingModel, BookingStatus } from "../models/Booking.model";
 
 interface LinkAccountBody {
   userId: string;
@@ -21,6 +24,7 @@ interface GetFaresBody extends FareRequest {
 
 // 1) New interface for createBooking body
 interface CreateBookingBody extends CreateBookingRequest { }
+interface CancelBookingBody extends CancelBookingRequest { }
 
 export class AggregatorController {
   /**
@@ -76,7 +80,7 @@ export class AggregatorController {
     reply: FastifyReply
   ) {
     const userId = req.session.userId;
-
+    // const userId = "64f9eae7c1d3d6c97a14c123"
     // 1) Fetch all linked aggregator accounts for this user
     const linkedAccounts = await AggregatorAccountModel.find({
       userId: new mongoose.Types.ObjectId(userId),
@@ -126,7 +130,7 @@ export class AggregatorController {
       req.log.error(err);
       return reply
         .status(500)
-        .send({ error: "Error fetching fares from aggregators" });
+        .send({ msg: "Error fetching fares from aggregators", error: err });
     }
   }
 
@@ -149,20 +153,20 @@ export class AggregatorController {
 
     // // 2) Fetch linked credentials for this user + aggregator
     let creds: any = {};
-    // try {
-    //   const accountDoc = await AggregatorAccountModel.findOne({
-    //     userId: new mongoose.Types.ObjectId(userId),
-    //     aggregator,
-    //   }).lean();
-    //   if (accountDoc) {
-    //     creds = accountDoc.creds;
-    //   }
-    // } catch (err: any) {
-    //   req.log.error(err);
-    //   return reply
-    //     .status(500)
-    //     .send({ error: "Failed to fetch linked aggregator account" });
-    // }
+    try {
+      const accountDoc = await AggregatorAccountModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        aggregator,
+      }).lean();
+      if (accountDoc) {
+        creds = accountDoc.creds;
+      }
+    } catch (err: any) {
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "Failed to fetch linked aggregator account" });
+    }
 
     // 3) Call the adapter’s createBooking(...)
     try {
@@ -211,20 +215,20 @@ export class AggregatorController {
 
     const adapterName = bookingDoc.adapter;
     const adapter = req.server.aggregators?.[adapterName];
-    if (!adapter) {
-      return reply.status(500).send({ error: "Adapter not loaded" });
-    }
+    // if (!adapter) {
+    //   return reply.status(500).send({ error: "Adapter not loaded" });
+    // }
 
     let creds: any = {};
-    // try {
-    //   const accountDoc = await AggregatorAccountModel.findOne({
-    //     userId: new mongoose.Types.ObjectId(userId),
-    //     aggregator: adapterName,
-    //   }).lean();
-    //   if (accountDoc) creds = accountDoc.creds;
-    // } catch (err: any) {
-    //   req.log.error(err);
-    // }
+    try {
+      const accountDoc = await AggregatorAccountModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        aggregator: adapterName,
+      }).lean();
+      if (accountDoc) creds = accountDoc.creds;
+    } catch (err: any) {
+      req.log.error(err);
+    }
 
     try {
       const details: BookingDetailsResult = await adapter.getBookingDetails(
@@ -235,6 +239,56 @@ export class AggregatorController {
       return reply.send(details);
     } catch (err: any) {
       if (err.type === "DetailsError") {
+        return reply.status(400).send({ errorCode: err.errorCode, errors: err.errors });
+      }
+      req.log.error(err);
+      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+    }
+  }
+
+  /** POST /cancellation/list */
+  static async getCancellationList(
+    req: FastifyRequest,
+    reply: FastifyReply
+  ) {
+    const { aggregator } = req.body as { aggregator: string };
+    const { userId } = req.session;
+    const accountDoc = await AggregatorAccountModel.findOne({ userId: new mongoose.Types.ObjectId(userId), aggregator }).lean();
+    const creds = accountDoc?.creds || {};
+    try {
+      const adapter = req.server.aggregators![aggregator];
+      const reasons: CancellationReason[] = await adapter.getCancellationList(creds);
+      return reply.send({ cancellationList: reasons });
+    } catch (err: any) {
+      req.log.error(err);
+      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+    }
+  }
+
+  /** POST /cancellation */
+  static async cancelBooking(
+    req: FastifyRequest<{ Body: CancelBookingBody }>,
+    reply: FastifyReply
+  ) {
+    const userId = req.session.userId;
+    const { aggregator, bookingId, reasonId, reason } = req.body;
+    let creds: any = {};
+    try {
+      const accountDoc = await AggregatorAccountModel.findOne({ userId: new mongoose.Types.ObjectId(userId), aggregator }).lean();
+      if (accountDoc) creds = accountDoc.creds;
+    } catch (err: any) {
+      req.log.error(err);
+    }
+    try {
+      const adapter = req.server.aggregators![aggregator];
+      const result: CancellationResult = await adapter.cancelBooking(creds, { aggregator, bookingId, reasonId, reason });
+      await BookingModel.findOneAndUpdate(
+        { adapterBookingId: bookingId },
+        { status: BookingStatus.CANCELED, raw: result }
+      );
+      return reply.send(result);
+    } catch (err: any) {
+      if (err.type === "CancelError") {
         return reply.status(400).send({ errorCode: err.errorCode, errors: err.errors });
       }
       req.log.error(err);

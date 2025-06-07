@@ -5,6 +5,9 @@ import {
   BaseAggregator,
   CreateBookingRequest,
   BookingResult,
+  CancellationReason,
+  CancelBookingRequest,
+  CancellationResult,
 } from "./BaseAggregator";
 import {
   FareRequest,
@@ -42,6 +45,24 @@ interface GozoConfirmSuccess {
 interface GozoConfirmResponse {
   success: boolean;
   data?: GozoConfirmSuccess;
+  errorCode?: number;
+  errors?: string[];
+}
+
+interface GozoCancellationListResponse {
+  success: boolean;
+  data?: { cancellationList: CancellationReason[] };
+  errorCode?: number;
+  errors?: string[];
+}
+interface GozoCancelResponse {
+  success: boolean;
+  data?: {
+    bookingId: string;
+    message: string;
+    cancellationCharge: number;
+    refundAmount: number;
+  };
   errorCode?: number;
   errors?: string[];
 }
@@ -307,7 +328,7 @@ export default class GozoAdapter extends BaseAggregator {
     ) {
       body.returnDate = req.returnDate;
     }
-
+    console.log("body--->", JSON.stringify(body))
     try {
       //
       // 5) POST to Gozo with Basic + x-api-key
@@ -404,8 +425,9 @@ export default class GozoAdapter extends BaseAggregator {
       gstin?: string;
     };
     try {
+      console.log(`${this.userServiceBaseUrl}/users/getData/${req.userId}`)
       const userRes = await axios.get(
-        `${this.userServiceBaseUrl}/users/${req.userId}`
+        `${this.userServiceBaseUrl}/users/getData/${req.userId}`
       );
       user = userRes.data;
     } catch (err: any) {
@@ -578,7 +600,7 @@ export default class GozoAdapter extends BaseAggregator {
       tripType: gozoTripType,
       cabType: gozoCabType,
       fare: {
-        advanceReceived: 0,
+        advanceReceived: req.price,
         totalAmount: req.price,
       },
       platform: {
@@ -594,7 +616,7 @@ export default class GozoAdapter extends BaseAggregator {
         firstName: user.firstName,
         lastName: user.lastName,
         primaryContact: {
-          code: user.phoneCode,
+          code: user.phoneCode || "91",
           number: user.phoneNumber,
         },
         alternateContact: { code: "", number: "" },
@@ -622,7 +644,7 @@ export default class GozoAdapter extends BaseAggregator {
     ) {
       holdBody.returnDate = req.returnDate;
     }
-
+    console.log("request body------>", JSON.stringify(holdBody))
     // 7) Call Gozo’s Hold (getQuote) endpoint
     let holdRes: GozoHoldResponse;
     try {
@@ -638,6 +660,7 @@ export default class GozoAdapter extends BaseAggregator {
         }
       );
       holdRes = response.data;
+      console.log("response----->", holdRes)
     } catch (err: any) {
       throw new Error(
         `createBooking: Gozo hold (getQuote) failed – ${err.response?.status || ""
@@ -776,5 +799,84 @@ export default class GozoAdapter extends BaseAggregator {
     };
 
     return formatted;
+  }
+
+  async getCancellationList(creds: Credentials): Promise<CancellationReason[]> {
+    try {
+      const response = await axios.post<GozoCancellationListResponse>(
+        `http://gozotech2.ddns.net:5192/api/cpapi/booking/getCancellationList`,
+        {
+          headers: {
+            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            "Content-Type": "application/json",
+            // "x-api-key": this.apiKey,
+          },
+        }
+      );
+      const payload = response.data;
+      if (!payload.success || !payload.data) {
+        throw {
+          type: "CancelListError",
+          errorCode: payload.errorCode || 500,
+          errors: payload.errors || ["Failed to fetch cancellation list"],
+        };
+      }
+      return payload.data.cancellationList;
+    } catch (err: any) {
+      // Network or unexpected
+      throw new Error(`getCancellationList failed – ${err.message}`);
+    }
+  }
+
+  async cancelBooking(
+    creds: Credentials,
+    req: CancelBookingRequest
+  ): Promise<CancellationResult> {
+    let cancelRes: GozoCancelResponse;
+    try {
+      const response = await axios.post<GozoCancelResponse>(
+        `http://gozotech2.ddns.net:5192/api/cpapi/booking/cancelBooking`,
+        {
+          bookingId: req.bookingId,
+          reasonId: req.reasonId,
+          reason: req.reason,
+        },
+        {
+          headers: {
+            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            "Content-Type": "application/json",
+            // "x-api-key": this.apiKey,
+          },
+        }
+      );
+      cancelRes = response.data;
+    } catch (err: any) {
+      throw new Error(`cancelBooking failed – ${err.message}`);
+    }
+
+    if (!cancelRes.success || !cancelRes.data) {
+      throw {
+        type: "CancelError",
+        errorCode: cancelRes.errorCode || 500,
+        errors: cancelRes.errors || ["Cancellation failed"],
+      };
+    }
+
+    // ── Update our Booking collection to status = CANCELED ───────────────
+    await BookingModel.findOneAndUpdate(
+      { adapterBookingId: req.bookingId },
+      {
+        status: BookingStatus.CANCELED,
+        raw: cancelRes.data,
+      }
+    );
+
+    // ── Return the normalized cancellation result ────────────────────────
+    return {
+      bookingId: cancelRes.data.bookingId,
+      message: cancelRes.data.message,
+      cancellationCharge: cancelRes.data.cancellationCharge,
+      refundAmount: cancelRes.data.refundAmount,
+    };
   }
 }
