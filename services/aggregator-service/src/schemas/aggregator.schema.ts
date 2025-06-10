@@ -179,6 +179,7 @@ export const getFaresSchema: FastifySchema = {
               estimatedTimeMinutes: { type: "integer" },
               vehicleType: { type: "string" },
               vehicleCode: { type: "number" },
+              rawVehicleType: { type: "string" },
               raw: { type: "object", nullable: true },
             },
           },

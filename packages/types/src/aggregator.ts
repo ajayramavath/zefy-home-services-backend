@@ -69,7 +69,8 @@ export interface FareResponse {
   estimatedTimeMinutes: number;
   vehicleType: string;
   vehicleCode: number | string;
-  raw?: unknown;
+  rawVehicleType: string;
+  raw?: any;
 }
 
 export interface Credentials {
@@ -78,6 +79,5 @@ export interface Credentials {
 }
 
 export interface BookingDetailsBody {
-
-  universalBookingId: string
+  universalBookingId: string;
 }
