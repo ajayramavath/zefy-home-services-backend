@@ -7,6 +7,7 @@ import {
   getBookingDetailsSchema,
   getCancellationListSchema,
   cancelBookingSchema,
+  listBookingsSchema,
 } from "../schemas/aggregator.schema";
 
 export default async function aggregatorRoutes(app: FastifyInstance) {
@@ -31,16 +32,21 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
   );
 
   app.post(
-    "/api/cancellation/list",
+    "/cancellationList",
     { schema: getCancellationListSchema },
     AggregatorController.getCancellationList
   );
 
   // Cancel a booking
   app.post(
-    "/api/cancellation",
+    "/cancelBooking",
     { schema: cancelBookingSchema },
     AggregatorController.cancelBooking
   );
-}
 
+  app.get(
+    "/bookingList",
+    { schema: listBookingsSchema },
+    AggregatorController.listBookings
+  );
+}

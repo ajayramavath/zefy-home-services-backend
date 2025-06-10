@@ -1,4 +1,11 @@
-import { FareRequest, FareResponse, Credentials, TripType, OutstationSubType, AirportSubType } from "@zf/types";
+import {
+  FareRequest,
+  FareResponse,
+  Credentials,
+  TripType,
+  OutstationSubType,
+  AirportSubType,
+} from "@zf/types";
 
 export interface CreateBookingRequest {
   aggregator: string;
@@ -38,7 +45,6 @@ export interface BookingResult {
   statusCode: number; // e.g. 200
 }
 
-
 export interface BookingDetailsResult {
   userId: string;
   universalBookingId: string;
@@ -47,7 +53,6 @@ export interface BookingDetailsResult {
   // plus any fields returned by Gozo's detail API
   [key: string]: any;
 }
-
 
 /**
  * Cancellation reason object
@@ -78,6 +83,17 @@ export interface CancellationResult {
   refundAmount: number;
 }
 
+/**
+ * Result returned when listing bookings
+ */
+export interface ListBookingResult {
+  userId: string;
+  universalBookingId: string;
+  tripType: string;
+  subType?: string | null;
+  [key: string]: any;
+}
+
 export abstract class BaseAggregator {
   abstract name: string;
   abstract linkAccount(creds: unknown): Promise<Credentials>;
@@ -102,4 +118,9 @@ export abstract class BaseAggregator {
     creds: Credentials,
     req: CancelBookingRequest
   ): Promise<CancellationResult>;
+
+  abstract listBookings(
+    creds: Credentials,
+    userId: string
+  ): Promise<ListBookingResult[]>;
 }

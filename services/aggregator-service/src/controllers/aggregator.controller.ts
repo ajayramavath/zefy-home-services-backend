@@ -9,7 +9,8 @@ import {
   BookingDetailsResult,
   CancellationReason,
   CancelBookingRequest,
-  CancellationResult
+  CancellationResult,
+  ListBookingResult,
 } from "../aggregators/BaseAggregator";
 import { BookingModel, BookingStatus } from "../models/Booking.model";
 
@@ -23,8 +24,11 @@ interface GetFaresBody extends FareRequest {
 }
 
 // 1) New interface for createBooking body
-interface CreateBookingBody extends CreateBookingRequest { }
-interface CancelBookingBody extends CancelBookingRequest { }
+interface CreateBookingBody extends CreateBookingRequest {}
+interface CancelBookingBody extends CancelBookingRequest {}
+interface ListBookingsBody {
+  // No body needed; userId from session
+}
 
 export class AggregatorController {
   /**
@@ -146,7 +150,7 @@ export class AggregatorController {
     const userId = req.session.userId;
 
     // 1) Validate that aggregator exists in server
-    const { aggregator } = req.body;
+    let { aggregator } = req.body;
     // if (!req.server.aggregators?.[aggregator]) {
     //   return reply.status(400).send({ error: "Unknown aggregator" });
     // }
@@ -170,7 +174,10 @@ export class AggregatorController {
 
     // 3) Call the adapter’s createBooking(...)
     try {
-      const adapter = req.server.aggregators![aggregator] || aggregator;
+      if (!aggregator || !req.server.aggregators?.[aggregator]) {
+        aggregator = "gozo";
+      }
+      const adapter = req.server.aggregators![aggregator];
       const bookingResult: BookingResult = await adapter.createBooking(
         creds,
         req.body
@@ -210,11 +217,13 @@ export class AggregatorController {
       }
     } catch (err: any) {
       req.log.error(err);
-      return reply.status(500).send({ error: "DB_ERROR", details: err.message });
+      return reply
+        .status(500)
+        .send({ error: "DB_ERROR", details: err.message });
     }
 
     const adapterName = bookingDoc.adapter;
-    const adapter = req.server.aggregators?.[adapterName];
+    const adapter = req.server.aggregators?.[adapterName] || "gozo";
     // if (!adapter) {
     //   return reply.status(500).send({ error: "Adapter not loaded" });
     // }
@@ -239,29 +248,40 @@ export class AggregatorController {
       return reply.send(details);
     } catch (err: any) {
       if (err.type === "DetailsError") {
-        return reply.status(400).send({ errorCode: err.errorCode, errors: err.errors });
+        return reply
+          .status(400)
+          .send({ errorCode: err.errorCode, errors: err.errors });
       }
       req.log.error(err);
-      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
     }
   }
 
   /** POST /cancellation/list */
-  static async getCancellationList(
-    req: FastifyRequest,
-    reply: FastifyReply
-  ) {
-    const { aggregator } = req.body as { aggregator: string };
+  static async getCancellationList(req: FastifyRequest, reply: FastifyReply) {
+    let { aggregator } = req.body as { aggregator: string };
     const { userId } = req.session;
-    const accountDoc = await AggregatorAccountModel.findOne({ userId: new mongoose.Types.ObjectId(userId), aggregator }).lean();
+    const accountDoc = await AggregatorAccountModel.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      aggregator,
+    }).lean();
     const creds = accountDoc?.creds || {};
     try {
+      if (!aggregator || !req.server.aggregators?.[aggregator]) {
+        aggregator = "gozo";
+      }
       const adapter = req.server.aggregators![aggregator];
-      const reasons: CancellationReason[] = await adapter.getCancellationList(creds);
+      const reasons: CancellationReason[] = await adapter.getCancellationList(
+        creds
+      );
       return reply.send({ cancellationList: reasons });
     } catch (err: any) {
       req.log.error(err);
-      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
     }
   }
 
@@ -271,17 +291,28 @@ export class AggregatorController {
     reply: FastifyReply
   ) {
     const userId = req.session.userId;
-    const { aggregator, bookingId, reasonId, reason } = req.body;
+    let { aggregator, bookingId, reasonId, reason } = req.body;
     let creds: any = {};
     try {
-      const accountDoc = await AggregatorAccountModel.findOne({ userId: new mongoose.Types.ObjectId(userId), aggregator }).lean();
+      const accountDoc = await AggregatorAccountModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        aggregator,
+      }).lean();
       if (accountDoc) creds = accountDoc.creds;
     } catch (err: any) {
       req.log.error(err);
     }
     try {
+      if (!aggregator || !req.server.aggregators?.[aggregator]) {
+        aggregator = "gozo";
+      }
       const adapter = req.server.aggregators![aggregator];
-      const result: CancellationResult = await adapter.cancelBooking(creds, { aggregator, bookingId, reasonId, reason });
+      const result: CancellationResult = await adapter.cancelBooking(creds, {
+        aggregator,
+        bookingId,
+        reasonId,
+        reason,
+      });
       await BookingModel.findOneAndUpdate(
         { adapterBookingId: bookingId },
         { status: BookingStatus.CANCELED, raw: result }
@@ -289,10 +320,64 @@ export class AggregatorController {
       return reply.send(result);
     } catch (err: any) {
       if (err.type === "CancelError") {
-        return reply.status(400).send({ errorCode: err.errorCode, errors: err.errors });
+        return reply
+          .status(400)
+          .send({ errorCode: err.errorCode, errors: err.errors });
       }
       req.log.error(err);
-      return reply.status(500).send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+    }
+  }
+
+  /**
+   * GET /bookings
+   * List all bookings for the authenticated user and given aggregator
+   */
+  static async listBookings(
+    req: FastifyRequest<{ Querystring: { aggregator: string } }>,
+    reply: FastifyReply
+  ) {
+    const userId = req.session.userId;
+    let { aggregator } = req.query;
+
+    // 1) Validate aggregator
+    if (!req.server.aggregators?.[aggregator]) {
+      return reply.status(400).send({ error: "Unknown aggregator" });
+    }
+
+    // 2) Fetch credentials
+    let creds: any = {};
+    try {
+      const account = await AggregatorAccountModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        aggregator,
+      }).lean();
+      if (account) creds = account.creds;
+    } catch (err: any) {
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "DB_ERROR", details: err.message });
+    }
+
+    // 3) Call adapter.listBookings
+    try {
+      if (!aggregator || !req.server.aggregators?.[aggregator]) {
+        aggregator = "gozo";
+      }
+      const adapter = req.server.aggregators![aggregator];
+      const bookings: ListBookingResult[] = await adapter.listBookings(
+        creds,
+        userId
+      );
+      return reply.send({ bookings });
+    } catch (err: any) {
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
     }
   }
 }

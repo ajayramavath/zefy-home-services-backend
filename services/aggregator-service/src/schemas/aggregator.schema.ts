@@ -487,3 +487,89 @@ export const cancelBookingSchema: FastifySchema = {
     },
   },
 };
+
+export const listBookingsSchema: FastifySchema = {
+  description:
+    "List all bookings made through a specific aggregator for the authenticated user",
+  tags: ["Aggregators"],
+  querystring: {
+    type: "object",
+    required: ["aggregator"],
+    properties: {
+      aggregator: {
+        type: "string",
+        description: "Key of the aggregator to list",
+      },
+    },
+  },
+  response: {
+    200: {
+      description: "Array of user bookings",
+      type: "object",
+      properties: {
+        bookings: {
+          type: "array",
+          items: {
+            type: "object",
+            required: [
+              "userId",
+              "universalBookingId",
+              "adapterBookingId",
+              "tripType",
+              "subType",
+              "source",
+              "destination",
+              "sourceLat",
+              "sourceLng",
+              "destLat",
+              "destLng",
+              "vehicleType",
+              "fare",
+              "cabDetails",
+            ],
+            properties: {
+              userId: { type: "string" },
+              universalBookingId: { type: "string" },
+              adapterBookingId: { type: "string" },
+              tripType: { type: "string" },
+              subType: { type: ["string", "null"] },
+              source: { type: "string" },
+              destination: { type: "string" },
+              sourceLat: { type: "number" },
+              sourceLng: { type: "number" },
+              destLat: { type: "number" },
+              destLng: { type: "number" },
+              vehicleType: { type: "string" },
+              fare: {
+                type: "object",
+                description: "Fare breakdown from confirm response",
+              },
+              cabDetails: {
+                type: "object",
+                description: "Cab metadata from confirm response",
+              },
+            },
+          },
+        },
+      },
+      required: ["bookings"],
+    },
+    400: {
+      description: "Missing or invalid query parameter",
+      type: "object",
+      properties: {
+        error: { type: "string" },
+      },
+      required: ["error"],
+    },
+    500: {
+      description: "Server error listing bookings",
+      type: "object",
+      properties: {
+        error: { type: "string" },
+        details: { type: "string" },
+      },
+      required: ["error"],
+    },
+  },
+};

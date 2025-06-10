@@ -8,6 +8,7 @@ import {
   CancellationReason,
   CancelBookingRequest,
   CancellationResult,
+  ListBookingResult,
 } from "./BaseAggregator";
 import {
   FareRequest,
@@ -874,7 +875,7 @@ export default class GozoAdapter extends BaseAggregator {
       };
     }
 
-    // ── Update our Booking collection to status = CANCELED ───────────────
+    // Update our Booking collection to status = CANCELED
     await BookingModel.findOneAndUpdate(
       { adapterBookingId: req.bookingId },
       {
@@ -883,12 +884,45 @@ export default class GozoAdapter extends BaseAggregator {
       }
     );
 
-    // ── Return the normalized cancellation result ────────────────────────
+    //Return the normalized cancellation result
     return {
       bookingId: cancelRes.data.bookingId,
       message: cancelRes.data.message,
       cancellationCharge: cancelRes.data.cancellationCharge,
       refundAmount: cancelRes.data.refundAmount,
     };
+  }
+
+  /**
+   * List all bookings made by a given user through this aggregator.
+   */
+  public async listBookings(
+    creds: Credentials,
+    userId: string
+  ): Promise<ListBookingResult[]> {
+    // 1) Query our Booking collection for this user + this adapter
+    const docs = await BookingModel.find({
+      adapter: this.name,
+      "requestPayload.userId": userId,
+    }).lean();
+
+    // 2) Map each stored booking into a minimal details result
+    return docs.map((doc) => ({
+      userId,
+      universalBookingId: doc.universalBookingId,
+      adapterBookingId: doc.adapterBookingId,
+      tripType: doc.requestPayload.tripType,
+      subType: doc.requestPayload.subType ?? null,
+      source: doc.requestPayload.fromAddress,
+      destination: doc.requestPayload.toAddress,
+      sourceLat: doc.requestPayload.fromLat,
+      sourceLng: doc.requestPayload.fromLng,
+      destLat: doc.requestPayload.toLat,
+      destLng: doc.requestPayload.toLng,
+      vehicleType:
+        doc.requestPayload.vehicleType || doc.requestPayload.rawVehicleType,
+      fare: doc.confirmResponse.cabRate.fare || {},
+      cabDetails: doc.confirmResponse.cabRate.cab || {},
+    }));
   }
 }
