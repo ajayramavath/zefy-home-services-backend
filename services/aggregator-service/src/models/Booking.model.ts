@@ -1,4 +1,3 @@
-// src/models/booking.ts
 import { Schema, model, Document } from "mongoose";
 
 export enum BookingStatus {
@@ -12,7 +11,7 @@ export enum BookingStatus {
   FAILED = "failed", // if hold or confirm errors out
 }
 
-// 1. Universal Booking interface
+//  Universal Booking interface
 export interface IUniversalBooking extends Document {
   universalBookingId: string; // our own UUID (e.g. "AGG-xxxxxx")
   adapter: string; // e.g. "gozo", "otherProvider"
@@ -59,7 +58,7 @@ const BookingSchema = new Schema<IUniversalBooking>(
     cabType: { type: Number, required: true },
     startDate: { type: String, required: true },
     startTime: { type: String, required: true },
-    raw: { type: Schema.Types.Mixed }
+    raw: { type: Schema.Types.Mixed },
   },
   { timestamps: true }
 );

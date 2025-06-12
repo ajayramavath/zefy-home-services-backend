@@ -1,4 +1,3 @@
-// services/aggregator-service/src/types/fastify.d.ts
 import "fastify";
 import { BaseAggregator } from "../aggregators/BaseAggregator";
 

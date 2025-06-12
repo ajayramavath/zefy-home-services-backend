@@ -1,0 +1,11 @@
+# services/aggregator-service/.dockerignore
+node_modules
+dist
+.env
+npm-debug.log*
+yarn-error.log*
+logs/
+.cache/
+.idea/
+.vscode/
+.DS_Store
