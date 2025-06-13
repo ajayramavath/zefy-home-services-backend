@@ -293,7 +293,7 @@ export class AggregatorController {
     req: FastifyRequest<{ Body: CancelBookingBody }>,
     reply: FastifyReply
   ) {
-    const userId = req.session.userId;
+    const userId = req.session.userId || req.body.userId;
     let { aggregator, bookingId, reasonId, reason } = req.body;
     let creds: any = {};
     try {
@@ -311,6 +311,7 @@ export class AggregatorController {
       }
       const adapter = req.server.aggregators![aggregator];
       const result: CancellationResult = await adapter.cancelBooking(creds, {
+        userId,
         aggregator,
         bookingId,
         reasonId,

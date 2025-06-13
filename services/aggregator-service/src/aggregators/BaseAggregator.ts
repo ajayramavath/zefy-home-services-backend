@@ -67,6 +67,7 @@ export interface CancellationReason {
  * Request payload for cancelBooking
  */
 export interface CancelBookingRequest {
+  userId: string;
   aggregator: string;
   bookingId: string;
   reasonId: number;
