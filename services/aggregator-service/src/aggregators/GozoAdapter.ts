@@ -148,11 +148,11 @@ export default class GozoAdapter extends BaseAggregator {
         gozoTripType = 9;
         break;
       case "dayRental4":
-        // day rental (8hr/80km), code=9
+        // day rental (8hr/80km), code=10
         gozoTripType = 10;
         break;
       case "dayRental4":
-        // day rental (12hr/120km), code=9
+        // day rental (12hr/120km), code=11
         gozoTripType = 11;
         break;
 
@@ -774,7 +774,7 @@ export default class GozoAdapter extends BaseAggregator {
     };
     try {
       const response = await axios.post(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/details",
+        "http://gozotech2.ddns.net:6183/api/cpapi/booking/getDetails",
         { bookingId: gozoBookingId },
         {
           headers: {
@@ -802,13 +802,25 @@ export default class GozoAdapter extends BaseAggregator {
     }
 
     // 3) Format response for our app
-    const raw = detailRes.data;
+    // const raw = detailRes.data;
     const formatted = {
       userId,
       universalBookingId,
+      adapterBookingId: booking.adapterBookingId,
       tripType: booking.requestPayload.tripType,
       subType: booking.requestPayload.subType || null,
-      ...raw,
+      status: booking.status,
+      source: booking.requestPayload.fromAddress,
+      destination: booking.requestPayload.toAddress,
+      sourceLat: booking.requestPayload.fromLat,
+      sourceLng: booking.requestPayload.fromLng,
+      destLat: booking.requestPayload.toLat,
+      destLng: booking.requestPayload.toLng,
+      vehicleType:
+        booking.requestPayload.vehicleType ||
+        booking.requestPayload.rawVehicleType,
+      fare: booking.confirmResponse.cabRate.fare || {},
+      cabDetails: booking.confirmResponse.cabRate.cab || {},
     };
 
     return formatted;

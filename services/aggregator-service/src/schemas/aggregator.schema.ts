@@ -291,6 +291,8 @@ export const createBookingSchema: FastifySchema = {
 };
 
 export const getBookingDetailsSchema: FastifySchema = {
+  description: "Get the details of bookings based on the ID",
+  tags: ["Aggregators"],
   body: {
     type: "object",
     required: ["universalBookingId"],
@@ -355,6 +357,8 @@ export const getBookingDetailsSchema: FastifySchema = {
 };
 
 export const getCancellationListSchema: FastifySchema = {
+  description: "Get the cancellation list from gozo",
+  tags: ["Aggregators"],
   body: {
     type: "object",
     required: ["aggregator"],
@@ -411,6 +415,8 @@ export const getCancellationListSchema: FastifySchema = {
 };
 
 export const cancelBookingSchema: FastifySchema = {
+  description: "Cancel the created booking",
+  tags: ["Aggregators"],
   body: {
     type: "object",
     required: ["aggregator", "bookingId", "reasonId", "reason"],
