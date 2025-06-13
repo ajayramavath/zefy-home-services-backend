@@ -539,6 +539,7 @@ export const cancelBookingSchema: FastifySchema = {
       required: ["bookingId", "message", "cancellationCharge", "refundAmount"],
     },
     400: {
+      description: "Cancellation failed – invalid request or business rules",
       type: "object",
       properties: {
         errorCode: {
@@ -551,9 +552,10 @@ export const cancelBookingSchema: FastifySchema = {
           description: "List of error messages",
         },
       },
-      required: ["errorCode", "errors"],
+      additionalProperties: true,
     },
     500: {
+      description: "Internal server error during cancellation",
       type: "object",
       properties: {
         error: {
