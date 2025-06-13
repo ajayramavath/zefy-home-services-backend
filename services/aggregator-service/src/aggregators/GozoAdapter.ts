@@ -763,8 +763,9 @@ export default class GozoAdapter extends BaseAggregator {
     if (!booking || !booking.adapterBookingId) {
       throw new Error(`Booking not found for id ${universalBookingId}`);
     }
+    console.log("booking----->", booking);
     const gozoBookingId = booking.adapterBookingId;
-
+    console.log("gozoBookingId----->", gozoBookingId);
     // 2) Call Gozo's Details endpoint
     let detailRes: {
       success: boolean;
