@@ -44,6 +44,7 @@ app.register(swaggerUI, {
   uiConfig: {
     docExpansion: "none",
     deepLinking: false,
+    url: "http://34.93.7.140",
   },
   staticCSP: true,
   transformStaticCSP: (header) => header,
