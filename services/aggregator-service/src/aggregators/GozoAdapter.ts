@@ -741,7 +741,7 @@ export default class GozoAdapter extends BaseAggregator {
       { universalBookingId: referenceId },
       {
         status: "confirmed",
-        confirmResponse: confirmRes,
+        confirmResponse: confirmRes.data,
       }
     );
     // 10) Return a BookingResult on success
