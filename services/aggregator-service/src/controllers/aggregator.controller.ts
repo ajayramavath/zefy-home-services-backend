@@ -261,8 +261,11 @@ export class AggregatorController {
 
   /** POST /cancellation/list */
   static async getCancellationList(req: FastifyRequest, reply: FastifyReply) {
-    let { aggregator } = req.body as { aggregator: string };
-    const { userId } = req.session;
+    let { aggregator, userId } = req.body as {
+      aggregator: string;
+      userId: string;
+    };
+
     const accountDoc = await AggregatorAccountModel.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       aggregator,

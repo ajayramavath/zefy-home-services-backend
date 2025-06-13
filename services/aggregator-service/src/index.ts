@@ -10,6 +10,9 @@ import {
 } from "@zf/common";
 import registryPlugin from "./plugins/registry";
 import aggregatorRoutes from "./routes/aggregator.routes";
+import aggregatorWebhookRoutes from "./routes/aggregatorWebhook.routes";
+import sseRoutes from "./routes/sse.routes";
+import { startGozoWebhookConsumer } from "./utils/rabbitmqpublisher";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const app = Fastify({ logger: true });
@@ -54,7 +57,8 @@ app.register(swaggerUI, {
 // Register routes
 app.register(aggregatorRoutes, { prefix: "/aggregator" });
 // app.register(favoritesRoutes, { prefix: "/users" });
-
+app.register(aggregatorWebhookRoutes, { prefix: "/aggregator/webhooks" });
+app.register(sseRoutes, { prefix: "/aggregator/sse" });
 // Health check
 app.get("/health", async () => ({ status: "ok" }));
 
@@ -62,6 +66,12 @@ const start = async () => {
   try {
     await app.listen({ port: PORT, host: "0.0.0.0" });
     app.log.info(`🚀 aggregator-service running on port ${PORT}`);
+
+    await app.ready();
+    const { channel } = app.rabbitmq;
+
+    await startGozoWebhookConsumer(channel);
+    app.log.info("🎧 Gozo RabbitMQ consumer started");
   } catch (err) {
     app.log.error(err);
     process.exit(1);

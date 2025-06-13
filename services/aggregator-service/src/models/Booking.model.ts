@@ -11,6 +11,26 @@ export enum BookingStatus {
   FAILED = "failed", // if hold or confirm errors out
 }
 
+export interface CarDetails {
+  isAttached: number;
+  id: number;
+  model: string;
+  number: string;
+  hasCNG: number;
+  roofTop: number;
+  licensePlate: any;
+  category: any;
+  hasElectric: number;
+}
+
+export interface DriverDetails {
+  name: string;
+  contact: {
+    code: string;
+    number: string;
+  };
+}
+
 //  Universal Booking interface
 export interface IUniversalBooking extends Document {
   universalBookingId: string; // our own UUID (e.g. "AGG-xxxxxx")
@@ -28,6 +48,9 @@ export interface IUniversalBooking extends Document {
   // Common fields you may want to index/search on:
   tripType: number;
   cabType: number;
+  otp?: string;
+  assigedVehicle?: CarDetails;
+  driverDetails?: DriverDetails;
   vehicleType: string;
   startDate: string; // "YYYY-MM-DD"
   startTime: string; // "HH:mm:ss"
@@ -58,6 +81,9 @@ const BookingSchema = new Schema<IUniversalBooking>(
     cabType: { type: Number, required: true },
     startDate: { type: String, required: true },
     startTime: { type: String, required: true },
+    otp: { type: String },
+    driverDetails: { type: Schema.Types.Mixed },
+    assigedVehicle: { type: Schema.Types.Mixed },
     raw: { type: Schema.Types.Mixed },
   },
   { timestamps: true }

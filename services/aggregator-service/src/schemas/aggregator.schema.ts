@@ -439,6 +439,10 @@ export const getCancellationListSchema: FastifySchema = {
         type: "string",
         description: "Name of the aggregator (e.g. 'gozo')",
       },
+      userId: {
+        type: "string",
+        description: "MongoDB ObjectId of the user",
+      },
     },
   },
   response: {
