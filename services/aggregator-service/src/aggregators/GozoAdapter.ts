@@ -406,8 +406,8 @@ export default class GozoAdapter extends BaseAggregator {
       const payload = err.response?.data;
       throw new Error(
         `GozoAdapter: API request failed` +
-          (status ? ` (status ${status})` : "") +
-          (payload ? ` – ${JSON.stringify(payload)}` : "")
+        (status ? ` (status ${status})` : "") +
+        (payload ? ` – ${JSON.stringify(payload)}` : "")
       );
     }
   }
@@ -664,8 +664,7 @@ export default class GozoAdapter extends BaseAggregator {
       console.log("response----->", holdRes);
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo hold (getQuote) failed – ${
-          err.response?.status || ""
+        `createBooking: Gozo hold (getQuote) failed – ${err.response?.status || ""
         } ${err.response?.data || err.message}`
       );
     }
@@ -724,8 +723,7 @@ export default class GozoAdapter extends BaseAggregator {
       confirmRes = response.data;
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${
-          err.response?.data || err.message
+        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${err.response?.data || err.message
         }`
       );
     }
@@ -740,6 +738,7 @@ export default class GozoAdapter extends BaseAggregator {
     await BookingModel.findOneAndUpdate(
       { universalBookingId: referenceId },
       {
+        adapterBookingId: confirmRes.data.bookingId,
         status: "confirmed",
         confirmResponse: confirmRes.data,
       }
@@ -789,8 +788,7 @@ export default class GozoAdapter extends BaseAggregator {
       console.log("detailRes------->", detailRes);
     } catch (err: any) {
       throw new Error(
-        `getBookingDetails: Gozo details API failed – ${
-          err.response?.status || ""
+        `getBookingDetails: Gozo details API failed – ${err.response?.status || ""
         } ${err.response?.data || err.message}`
       );
     }

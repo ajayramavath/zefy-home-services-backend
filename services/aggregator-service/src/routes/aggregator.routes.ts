@@ -40,7 +40,7 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
   // Cancel a booking
   app.post(
     "/cancelBooking",
-    { schema: cancelBookingSchema },
+    // { schema: cancelBookingSchema },
     AggregatorController.cancelBooking
   );
 
