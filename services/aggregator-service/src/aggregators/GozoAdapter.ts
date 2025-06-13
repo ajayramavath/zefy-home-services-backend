@@ -785,6 +785,7 @@ export default class GozoAdapter extends BaseAggregator {
         }
       );
       detailRes = response.data;
+      console.log("detailRes------->", detailRes);
     } catch (err: any) {
       throw new Error(
         `getBookingDetails: Gozo details API failed – ${
