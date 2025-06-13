@@ -832,6 +832,7 @@ export default class GozoAdapter extends BaseAggregator {
     try {
       const response = await axios.post<GozoCancellationListResponse>(
         `http://gozotech2.ddns.net:5192/api/cpapi/booking/getCancellationList`,
+        {},
         {
           headers: {
             Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",

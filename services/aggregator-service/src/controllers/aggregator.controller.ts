@@ -270,6 +270,7 @@ export class AggregatorController {
       userId: new mongoose.Types.ObjectId(userId),
       aggregator,
     }).lean();
+    console.log("accountDoc----->", accountDoc);
     const creds = accountDoc?.creds || {};
     try {
       if (!aggregator || !req.server.aggregators?.[aggregator]) {
