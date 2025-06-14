@@ -35,7 +35,18 @@ export async function handleGozoEvent(
   if (type in statusMap) {
     await BookingModel.findOneAndUpdate(
       { universalBookingId: bookingId },
-      { $set: { status: statusMap[type] } }
+      {
+        $set: {
+          status: statusMap[type],
+          $push: {
+            rideStatusUpdates: {
+              status: statusMap[type],
+              timestamp: new Date(),
+              assignedTo: null,
+            },
+          },
+        }
+      }
     );
   }
 
@@ -60,17 +71,17 @@ export async function handleGozoEvent(
     const coords = data.tripdata?.coordinates;
     if (!coords) return;
 
-    await BookingModel.findOneAndUpdate(
-      { universalBookingId: bookingId },
-      {
-        $push: {
-          rideStatusUpdates: {
-            status: "locationUpdate",
-            timestamp: new Date(),
-            assignedTo: null,
-          },
-        },
-      }
-    );
+    // await BookingModel.findOneAndUpdate(
+    //   { universalBookingId: bookingId },
+    //   {
+    //     $push: {
+    //       rideStatusUpdates: {
+    //         status: "locationUpdate",
+    //         timestamp: new Date(),
+    //         assignedTo: null,
+    //       },
+    //     },
+    //   }
+    // );
   }
 }

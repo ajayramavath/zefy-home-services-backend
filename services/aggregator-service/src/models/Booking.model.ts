@@ -58,6 +58,11 @@ export interface IUniversalBooking extends Document {
   // Timestamps:
   createdAt: Date;
   updatedAt: Date;
+  rideStatusUpdates?: {
+    status: string,
+    timesatamp: Date,
+    assignedTo: string | null
+  }
 }
 
 const BookingSchema = new Schema<IUniversalBooking>(
@@ -85,6 +90,9 @@ const BookingSchema = new Schema<IUniversalBooking>(
     driverDetails: { type: Schema.Types.Mixed },
     assigedVehicle: { type: Schema.Types.Mixed },
     raw: { type: Schema.Types.Mixed },
+    rideStatusUpdates: {
+      type: Schema.Types.Mixed
+    }
   },
   { timestamps: true }
 );

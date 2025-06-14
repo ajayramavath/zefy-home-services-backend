@@ -819,8 +819,12 @@ export default class GozoAdapter extends BaseAggregator {
       vehicleType:
         booking.requestPayload.vehicleType ||
         booking.requestPayload.rawVehicleType,
-      fare: booking.confirmResponse.cabRate.fare || {},
-      cabDetails: booking.confirmResponse.cabRate.cab || {},
+      fare: booking.confirmResponse.cabRate.fare,
+      cabDetails: booking.confirmResponse.cabRate.cab,
+      createdAt: booking.createdAt,
+      startDate: booking.startDate,
+      startTime: booking.startTime,
+      rideStatusUpdates: booking.rideStatusUpdates
     };
 
     return formatted;
@@ -932,6 +936,7 @@ export default class GozoAdapter extends BaseAggregator {
       sourceLng: doc.requestPayload.fromLng,
       destLat: doc.requestPayload.toLat,
       destLng: doc.requestPayload.toLng,
+      status: doc.status,
       vehicleType:
         doc.requestPayload.vehicleType || doc.requestPayload.rawVehicleType,
       fare: doc.confirmResponse.cabRate.fare || {},

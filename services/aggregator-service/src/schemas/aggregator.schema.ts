@@ -311,10 +311,7 @@ export const getBookingDetailsSchema: FastifySchema = {
     200: {
       type: "object",
       properties: {
-        userId: {
-          type: "string",
-          description: "ID of the user",
-        },
+        userId: { type: "string", description: "ID of the user" },
         universalBookingId: {
           type: "string",
           description: "Universal booking ID",
@@ -371,6 +368,33 @@ export const getBookingDetailsSchema: FastifySchema = {
           type: "object",
           description: "Cab metadata from confirmation",
         },
+        createdAt: {
+          type: "string",
+          format: "date-time",
+          description: "Timestamp when the booking was created",
+        },
+        startDate: {
+          type: ["string", "null"],
+          format: "date",
+          description: "Scheduled trip start date",
+        },
+        startTime: {
+          type: ["string", "null"],
+          description: "Scheduled trip start time",
+        },
+        rideStatusUpdates: {
+          type: "array",
+          description: "Timeline of ride status updates",
+          items: {
+            type: "object",
+            properties: {
+              status: { type: "string" },
+              timestamp: { type: "string", format: "date-time" },
+              assignedTo: { type: ["string", "null"] },
+            },
+            required: ["status", "timestamp", "assignedTo"],
+          },
+        },
       },
       required: [
         "userId",
@@ -387,6 +411,8 @@ export const getBookingDetailsSchema: FastifySchema = {
         "vehicleType",
         "fare",
         "cabDetails",
+        "createdAt",
+        "rideStatusUpdates",
       ],
     },
     400: {
@@ -427,6 +453,7 @@ export const getBookingDetailsSchema: FastifySchema = {
     },
   },
 };
+
 
 export const getCancellationListSchema: FastifySchema = {
   description: "Get the cancellation list from gozo",
@@ -624,6 +651,10 @@ export const listBookingsSchema: FastifySchema = {
               destLat: { type: "number" },
               destLng: { type: "number" },
               vehicleType: { type: "string" },
+              status: {
+                type: "string",
+                description: "Current booking status",
+              },
               fare: {
                 type: "object",
                 description: "Fare breakdown from confirm response",
