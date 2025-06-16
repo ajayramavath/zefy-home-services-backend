@@ -396,24 +396,6 @@ export const getBookingDetailsSchema: FastifySchema = {
           },
         },
       },
-      required: [
-        "userId",
-        "universalBookingId",
-        "adapterBookingId",
-        "tripType",
-        "status",
-        "source",
-        "destination",
-        "sourceLat",
-        "sourceLng",
-        "destLat",
-        "destLng",
-        "vehicleType",
-        "fare",
-        "cabDetails",
-        "createdAt",
-        "rideStatusUpdates",
-      ],
     },
     400: {
       type: "object",
@@ -453,7 +435,6 @@ export const getBookingDetailsSchema: FastifySchema = {
     },
   },
 };
-
 
 export const getCancellationListSchema: FastifySchema = {
   description: "Get the cancellation list from gozo",
@@ -563,7 +544,6 @@ export const cancelBookingSchema: FastifySchema = {
           description: "Amount refunded to the user",
         },
       },
-      required: ["bookingId", "message", "cancellationCharge", "refundAmount"],
     },
     400: {
       description: "Cancellation failed – invalid request or business rules",
@@ -622,22 +602,7 @@ export const listBookingsSchema: FastifySchema = {
           type: "array",
           items: {
             type: "object",
-            required: [
-              "userId",
-              "universalBookingId",
-              "adapterBookingId",
-              "tripType",
-              "subType",
-              "source",
-              "destination",
-              "sourceLat",
-              "sourceLng",
-              "destLat",
-              "destLng",
-              "vehicleType",
-              "fare",
-              "cabDetails",
-            ],
+
             properties: {
               userId: { type: "string" },
               universalBookingId: { type: "string" },

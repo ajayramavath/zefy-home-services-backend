@@ -25,7 +25,7 @@ app.register(registryPlugin);
 
 app.register(sessionPlugin, {
   // e.g. 7 days
-  ttlSeconds: 7 * 24 * 3600,
+  ttlSeconds: 180 * 24 * 3600,
   allowMultipleSessions: false,
 });
 

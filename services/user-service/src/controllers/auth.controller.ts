@@ -76,7 +76,7 @@ export class AuthController {
       return reply.send({
         user,
         sessionToken,
-        expiresIn: 7 * 24 * 3600,
+        expiresIn: 180 * 24 * 3600,
       });
     } catch (err) {
       req.log.error(err);
