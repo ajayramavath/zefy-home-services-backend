@@ -80,6 +80,8 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("/users/health") ||
       req.url.startsWith("/aggregator/docs") ||
       req.url.startsWith("/aggregator/health") ||
+      req.url.startsWith("/parcel/docs") ||
+      req.url.startsWith("/parcel/health") ||
       req.url.startsWith("/health") ||
       req.url.startsWith("docs") ||
       req.url.startsWith("/users/getData") ||
