@@ -4,7 +4,8 @@ export enum BookingStatus {
   CREATED = "created",
   QUOTED = "quoted", // after Hold succeeds
   CONFIRMED = "confirmed", // after Confirm succeeds
-  DRIVER_ASSIGNED = "driver_assigned",
+  LEFTFORPICKUP = "leftforpickup",
+  ARRIVED = "arrived",
   STARTED = "started",
   COMPLETED = "completed",
   CANCELED = "canceled",
@@ -59,10 +60,10 @@ export interface IUniversalBooking extends Document {
   createdAt: Date;
   updatedAt: Date;
   rideStatusUpdates?: {
-    status: string,
-    timesatamp: Date,
-    assignedTo: string | null
-  }
+    status: string;
+    timesatamp: Date;
+    assignedTo: string | null;
+  };
 }
 
 const BookingSchema = new Schema<IUniversalBooking>(
@@ -91,8 +92,8 @@ const BookingSchema = new Schema<IUniversalBooking>(
     assigedVehicle: { type: Schema.Types.Mixed },
     raw: { type: Schema.Types.Mixed },
     rideStatusUpdates: {
-      type: Schema.Types.Mixed
-    }
+      type: Schema.Types.Mixed,
+    },
   },
   { timestamps: true }
 );

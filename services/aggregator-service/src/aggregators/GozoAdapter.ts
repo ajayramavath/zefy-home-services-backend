@@ -406,8 +406,8 @@ export default class GozoAdapter extends BaseAggregator {
       const payload = err.response?.data;
       throw new Error(
         `GozoAdapter: API request failed` +
-        (status ? ` (status ${status})` : "") +
-        (payload ? ` – ${JSON.stringify(payload)}` : "")
+          (status ? ` (status ${status})` : "") +
+          (payload ? ` – ${JSON.stringify(payload)}` : "")
       );
     }
   }
@@ -664,7 +664,8 @@ export default class GozoAdapter extends BaseAggregator {
       console.log("response----->", holdRes);
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo hold (getQuote) failed – ${err.response?.status || ""
+        `createBooking: Gozo hold (getQuote) failed – ${
+          err.response?.status || ""
         } ${err.response?.data || err.message}`
       );
     }
@@ -723,7 +724,8 @@ export default class GozoAdapter extends BaseAggregator {
       confirmRes = response.data;
     } catch (err: any) {
       throw new Error(
-        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${err.response?.data || err.message
+        `createBooking: Gozo confirm failed – ${err.response?.status || ""} ${
+          err.response?.data || err.message
         }`
       );
     }
@@ -735,6 +737,7 @@ export default class GozoAdapter extends BaseAggregator {
         errors: confirmRes.errors || ["Unknown confirm error"],
       };
     }
+    console.log(confirmRes);
     await BookingModel.findOneAndUpdate(
       { universalBookingId: referenceId },
       {
@@ -788,7 +791,8 @@ export default class GozoAdapter extends BaseAggregator {
       console.log("detailRes------->", detailRes);
     } catch (err: any) {
       throw new Error(
-        `getBookingDetails: Gozo details API failed – ${err.response?.status || ""
+        `getBookingDetails: Gozo details API failed – ${
+          err.response?.status || ""
         } ${err.response?.data || err.message}`
       );
     }
@@ -824,7 +828,7 @@ export default class GozoAdapter extends BaseAggregator {
       createdAt: booking.createdAt,
       startDate: booking.startDate,
       startTime: booking.startTime,
-      rideStatusUpdates: booking.rideStatusUpdates
+      rideStatusUpdates: booking.rideStatusUpdates,
     };
 
     return formatted;
