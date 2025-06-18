@@ -1,5 +1,18 @@
 import { FastifySchema } from "fastify";
 
+const parcelOrderProps = {
+  _id: { type: "string" },
+  provider: { type: "string" },
+  requestId: { type: "string" },
+  status: { type: "string" },
+  pickup: { type: "object" },
+  drop: { type: "object" },
+  deliveryInstructions: { type: "object", nullable: true },
+  rawResponse: { type: "object" },
+  createdAt: { type: "string", format: "date-time" },
+  updatedAt: { type: "string", format: "date-time" },
+};
+
 export const getQuoteSchema: FastifySchema = {
   description: "Get quotes from all parcel providers",
   tags: ["Parcels"],
@@ -34,6 +47,25 @@ export const getQuoteSchema: FastifySchema = {
             properties: {
               country_code: { type: "string" },
               number: { type: "string" },
+            },
+          },
+        },
+      },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              provider: { type: "string" },
+              quote: { type: "object" },
+              error: { type: "string" },
             },
           },
         },
@@ -153,6 +185,18 @@ export const createOrderSchema: FastifySchema = {
       },
     },
   },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "object",
+          properties: parcelOrderProps,
+        },
+      },
+    },
+  },
 };
 
 export const getOrderStatusSchema: FastifySchema = {
@@ -166,6 +210,23 @@ export const getOrderStatusSchema: FastifySchema = {
       orderId: { type: "string" },
     },
   },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          anyOf: [
+            { type: "null" },
+            {
+              type: "object",
+              properties: parcelOrderProps,
+            },
+          ],
+        },
+      },
+    },
+  },
 };
 
 export const cancelOrderSchema: FastifySchema = {
@@ -177,6 +238,21 @@ export const cancelOrderSchema: FastifySchema = {
     properties: {
       provider: { type: "string" },
       orderId: { type: "string" },
+    },
+  },
+  response: {
+    200: {
+      type: "object",
+      properties: {
+        success: { type: "boolean" },
+        data: {
+          type: "object",
+          properties: {
+            code: { type: "number" },
+            message: { type: "string" },
+          },
+        },
+      },
     },
   },
 };
