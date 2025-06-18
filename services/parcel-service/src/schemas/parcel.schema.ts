@@ -13,6 +13,14 @@ const parcelOrderProps = {
   updatedAt: { type: "string", format: "date-time" },
 };
 
+const errorResponse = {
+  type: "object",
+  properties: {
+    success: { type: "boolean", const: false },
+    message: { type: "string" },
+  },
+};
+
 export const getQuoteSchema: FastifySchema = {
   description: "Get quotes from all parcel providers",
   tags: ["Parcels"],
@@ -71,6 +79,8 @@ export const getQuoteSchema: FastifySchema = {
         },
       },
     },
+    400: errorResponse,
+    500: errorResponse,
   },
 };
 
@@ -196,6 +206,8 @@ export const createOrderSchema: FastifySchema = {
         },
       },
     },
+    400: errorResponse,
+    500: errorResponse,
   },
 };
 
@@ -218,14 +230,13 @@ export const getOrderStatusSchema: FastifySchema = {
         data: {
           anyOf: [
             { type: "null" },
-            {
-              type: "object",
-              properties: parcelOrderProps,
-            },
+            { type: "object", properties: parcelOrderProps },
           ],
         },
       },
     },
+    400: errorResponse,
+    500: errorResponse,
   },
 };
 
@@ -254,5 +265,7 @@ export const cancelOrderSchema: FastifySchema = {
         },
       },
     },
+    400: errorResponse,
+    500: errorResponse,
   },
 };
