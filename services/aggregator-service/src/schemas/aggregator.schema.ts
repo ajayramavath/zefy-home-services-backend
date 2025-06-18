@@ -364,6 +364,18 @@ export const getBookingDetailsSchema: FastifySchema = {
           type: "object",
           description: "Fare breakdown from confirmation",
         },
+        otp: {
+          type: "string",
+          description: "OTP for starting a ride",
+        },
+        driverDetails: {
+          type: "object",
+          description: "Driver metadata",
+        },
+        assignedVehicle: {
+          type: "object",
+          description: "Assigned vehicle meta data",
+        },
         cabDetails: {
           type: "object",
           description: "Cab metadata from confirmation",
@@ -619,14 +631,6 @@ export const listBookingsSchema: FastifySchema = {
               status: {
                 type: "string",
                 description: "Current booking status",
-              },
-              fare: {
-                type: "object",
-                description: "Fare breakdown from confirm response",
-              },
-              cabDetails: {
-                type: "object",
-                description: "Cab metadata from confirm response",
               },
             },
           },

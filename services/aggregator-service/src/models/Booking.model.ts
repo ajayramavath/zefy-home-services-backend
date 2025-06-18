@@ -50,7 +50,7 @@ export interface IUniversalBooking extends Document {
   tripType: number;
   cabType: number;
   otp?: string;
-  assigedVehicle?: CarDetails;
+  assignedVehicle?: CarDetails;
   driverDetails?: DriverDetails;
   vehicleType: string;
   startDate: string; // "YYYY-MM-DD"
@@ -89,7 +89,7 @@ const BookingSchema = new Schema<IUniversalBooking>(
     startTime: { type: String, required: true },
     otp: { type: String },
     driverDetails: { type: Schema.Types.Mixed },
-    assigedVehicle: { type: Schema.Types.Mixed },
+    assignedVehicle: { type: Schema.Types.Mixed },
     raw: { type: Schema.Types.Mixed },
     rideStatusUpdates: {
       type: Schema.Types.Mixed,
