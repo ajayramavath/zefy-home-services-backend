@@ -809,7 +809,7 @@ export default class GozoAdapter extends BaseAggregator {
     // 3) Format response for our app
     // const raw = detailRes.data;
     console.log("fare------>", booking?.confirmResponse?.cabRate?.fare);
-    console.log(booking?.confirmResponse?.cabRate?.cab);
+    console.log(booking?.confirmResponse);
     const formatted = {
       userId,
       universalBookingId,

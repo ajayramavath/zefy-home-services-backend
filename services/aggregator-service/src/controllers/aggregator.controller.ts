@@ -206,8 +206,8 @@ export class AggregatorController {
     req: FastifyRequest<{ Body: BookingDetailsBody }>,
     reply: FastifyReply
   ) {
-    const userId = req.session.userId;
-    const { universalBookingId } = req.body;
+    // const userId = req.session.userId;
+    const { universalBookingId, userId } = req.body;
 
     let bookingDoc;
     try {
@@ -243,7 +243,7 @@ export class AggregatorController {
       const details: BookingDetailsResult = await adapter.getBookingDetails(
         creds,
         universalBookingId,
-        userId
+        userId as string
       );
       return reply.send(details);
     } catch (err: any) {

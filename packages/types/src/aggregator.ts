@@ -80,4 +80,5 @@ export interface Credentials {
 
 export interface BookingDetailsBody {
   universalBookingId: string;
+  userId?: string;
 }
