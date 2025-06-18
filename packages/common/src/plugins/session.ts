@@ -84,7 +84,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("docs") ||
       req.url.startsWith("/users/getData") ||
       req.url.startsWith("/aggregator/cancellationList") ||
-      req.url.startsWith("/aggregator/gozo")
+      req.url.startsWith("/aggregator/webhooks/gozo")
     ) {
       return;
     }
