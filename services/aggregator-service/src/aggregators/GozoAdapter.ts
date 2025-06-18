@@ -928,7 +928,7 @@ export default class GozoAdapter extends BaseAggregator {
       adapter: this.name,
       "requestPayload.userId": userId,
     }).lean();
-
+    console.log("docs----->", docs);
     // 2) Map each stored booking into a minimal details result
     return docs.map((doc) => ({
       userId,
@@ -945,8 +945,8 @@ export default class GozoAdapter extends BaseAggregator {
       status: doc.status,
       vehicleType:
         doc.requestPayload.vehicleType || doc.requestPayload.rawVehicleType,
-      fare: doc.confirmResponse.cabRate.fare || {},
-      cabDetails: doc.confirmResponse.cabRate.cab || {},
+      fare: doc.confirmResponse?.cabRate?.fare || {},
+      cabDetails: doc.confirmResponse?.cabRate?.cab || {},
     }));
   }
 }
