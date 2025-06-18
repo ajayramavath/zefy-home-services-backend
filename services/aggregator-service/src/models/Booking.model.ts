@@ -4,6 +4,7 @@ export enum BookingStatus {
   CREATED = "created",
   QUOTED = "quoted", // after Hold succeeds
   CONFIRMED = "confirmed", // after Confirm succeeds
+  ASSIGNED = "assigned",
   LEFTFORPICKUP = "leftforpickup",
   ARRIVED = "arrived",
   STARTED = "started",
@@ -30,6 +31,7 @@ export interface DriverDetails {
     code: string;
     number: string;
   };
+  rating: number;
 }
 
 //  Universal Booking interface
@@ -45,7 +47,7 @@ export interface IUniversalBooking extends Document {
   // raw responses from Gozo:
   holdResponse?: any;
   confirmResponse?: any;
-
+  endResponse?: any;
   // Common fields you may want to index/search on:
   tripType: number;
   cabType: number;
@@ -81,7 +83,7 @@ const BookingSchema = new Schema<IUniversalBooking>(
     requestPayload: { type: Schema.Types.Mixed, required: true },
     holdResponse: { type: Schema.Types.Mixed },
     confirmResponse: { type: Schema.Types.Mixed },
-
+    endResponse: { type: Schema.Types.Mixed },
     // Optional: flatten out some search keys
     tripType: { type: Number, required: true },
     cabType: { type: Number, required: true },

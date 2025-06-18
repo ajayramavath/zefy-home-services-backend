@@ -50,16 +50,38 @@ export async function handleGozoEvent(
     );
   }
 
+  // if (type === "tripend") {
+  //   let data = {};
+  //   await BookingModel.findOneAndUpdate(
+  //     { universalBookingId: bookingId },
+  //     {
+  //       $set: {
+  //         status: statusMap[type],
+  //         $push: {
+  //           rideStatusUpdates: {
+  //             status: statusMap[type],
+  //             timestamp: new Date(),
+  //             assignedTo: null,
+  //           },
+  //         },
+  //       },
+  //     }
+  //   );
+  // }
+
   if (type === "cabdriverupdate") {
     const { driver, car, otp } = data;
     await BookingModel.findOneAndUpdate(
       { universalBookingId: bookingId },
       {
         $set: {
+          status: "assigned",
           otp: otp,
           driverDetails: {
             name: driver?.name,
             phoneNumber: driver?.contact?.number?.toString(),
+            rating: driver?.rating,
+            isDocVerified: driver?.isDocVerified,
           },
           assignedVehicle: car,
         },
