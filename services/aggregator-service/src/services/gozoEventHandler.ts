@@ -45,7 +45,7 @@ export async function handleGozoEvent(
               assignedTo: null,
             },
           },
-        }
+        },
       }
     );
   }
