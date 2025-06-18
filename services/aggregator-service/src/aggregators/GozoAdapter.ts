@@ -9,6 +9,7 @@ import {
   CancelBookingRequest,
   CancellationResult,
   ListBookingResult,
+  BookingDetailsResult,
 } from "./BaseAggregator";
 import {
   FareRequest,
@@ -759,7 +760,7 @@ export default class GozoAdapter extends BaseAggregator {
     creds: Credentials,
     universalBookingId: string,
     userId: string
-  ): Promise<any> {
+  ): Promise<BookingDetailsResult> {
     // 1) Retrieve the saved booking to get Gozo's bookingId
     const booking = await BookingModel.findOne({ universalBookingId }).lean();
     if (!booking || !booking.adapterBookingId) {
@@ -807,6 +808,8 @@ export default class GozoAdapter extends BaseAggregator {
 
     // 3) Format response for our app
     // const raw = detailRes.data;
+    console.log("fare------>", booking?.confirmResponse?.cabRate?.fare);
+    console.log(booking?.confirmResponse?.cabRate?.cab);
     const formatted = {
       userId,
       universalBookingId,
@@ -823,11 +826,11 @@ export default class GozoAdapter extends BaseAggregator {
       vehicleType:
         booking.requestPayload.vehicleType ||
         booking.requestPayload.rawVehicleType,
-      fare: booking?.confirmResponse?.cabRate?.fare || {},
-      cabDetails: booking?.confirmResponse?.cabRate?.cab || {},
-      driverDetails: booking?.driverDetails || {},
+      fare: booking?.confirmResponse?.cabRate?.fare,
+      cabDetails: booking?.confirmResponse?.cabRate?.cab,
+      driverDetails: booking?.driverDetails,
       otp: booking?.otp || "",
-      assignedVehicle: booking?.assignedVehicle || {},
+      assignedVehicle: booking?.assignedVehicle,
       createdAt: booking.createdAt,
       startDate: booking.startDate,
       startTime: booking.startTime,
