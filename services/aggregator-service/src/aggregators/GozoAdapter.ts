@@ -335,11 +335,11 @@ export default class GozoAdapter extends BaseAggregator {
       // 5) POST to Gozo with Basic + x-api-key
       //
       const response = await axios.post(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/getQuote",
+        "http://gozotech2.ddns.net:5192/api/cpapi/booking/getQuote",
         body,
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization: "Basic YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             // "x-api-key": apiKey,
           },
@@ -650,11 +650,11 @@ export default class GozoAdapter extends BaseAggregator {
     let holdRes: GozoHoldResponse;
     try {
       const response = await axios.post<GozoHoldResponse>(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/hold",
+        "http://gozotech2.ddns.net:5192/api/cpapi/booking/hold",
         holdBody,
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization: "Basic YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             // "x-api-key": this.apiKey,
           },
@@ -711,11 +711,11 @@ export default class GozoAdapter extends BaseAggregator {
     let confirmRes: GozoConfirmResponse;
     try {
       const response = await axios.post<GozoConfirmResponse>(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/confirm",
+        "http://gozotech2.ddns.net:5192/api/cpapi/booking/confirm",
         { bookingId: gozoBookingId },
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization: "Basic YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             // "x-api-key": this.apiKey,
           },
@@ -777,11 +777,11 @@ export default class GozoAdapter extends BaseAggregator {
     };
     try {
       const response = await axios.post(
-        "http://gozotech2.ddns.net:6183/api/cpapi/booking/getDetails",
+        "http://gozotech2.ddns.net:5192/api/cpapi/booking/getDetails",
         { bookingId: gozoBookingId },
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization: "Basic YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             "x-api-key": this.apiKey,
           },
@@ -841,7 +841,8 @@ export default class GozoAdapter extends BaseAggregator {
         {},
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization:
+              "Basic  YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             // "x-api-key": this.apiKey,
           },
@@ -877,7 +878,8 @@ export default class GozoAdapter extends BaseAggregator {
         },
         {
           headers: {
-            Authorization: "Basic M2JlNmE5MzMxYjg2NDllN2M4YTdmMTRjZGZhOTAyY2Y",
+            Authorization:
+              "Basic  YWYzZWU1ZjJlMjIwZjAwYjIzNTdiY2E2MDZhMjQ1N2U=",
             "Content-Type": "application/json",
             // "x-api-key": this.apiKey,
           },
