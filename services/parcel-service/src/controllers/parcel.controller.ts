@@ -32,6 +32,8 @@ export class ParcelController {
     reply: FastifyReply
   ): Promise<CreateOrderResponse | ErrorResponse> {
     const { provider } = req.body;
+    const userId = req.session.userId;
+    console.log("session userId---->", userId);
     const adapter = req.server.parcels[provider];
 
     if (!adapter) {
@@ -41,7 +43,7 @@ export class ParcelController {
       });
     }
 
-    const order = await adapter.createPorterOrder(req.body);
+    const order = await adapter.createPorterOrder(req.body, userId);
     return reply.send({ success: true, data: order });
   }
 
@@ -50,6 +52,8 @@ export class ParcelController {
     reply: FastifyReply
   ): Promise<OrderStatusResponse | ErrorResponse> {
     const { provider, orderId } = req.body;
+    const userId = req.session.userId;
+    console.log("session userId---->", userId);
     const adapter = req.server.parcels[provider];
 
     if (!adapter) {
@@ -59,7 +63,13 @@ export class ParcelController {
       });
     }
 
-    const status = await adapter.getPorterOrderStatus({ provider, orderId });
+    const status = await adapter.getPorterOrderStatus(
+      {
+        provider,
+        orderId,
+      },
+      userId
+    );
     return reply.send({ success: true, data: status });
   }
 
@@ -68,6 +78,8 @@ export class ParcelController {
     reply: FastifyReply
   ): Promise<CancelOrderResponse | ErrorResponse> {
     const { provider, orderId } = req.body;
+    const userId = req.session.userId;
+    console.log("session userId---->", userId);
     const adapter = req.server.parcels[provider];
 
     if (!adapter) {
@@ -77,7 +89,13 @@ export class ParcelController {
       });
     }
 
-    const result = await adapter.cancelPorterOrder({ provider, orderId });
+    const result = await adapter.cancelPorterOrder(
+      {
+        provider,
+        orderId,
+      },
+      userId
+    );
     return reply.send({ success: true, data: result });
   }
 }

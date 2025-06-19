@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IParcelOrder extends Document {
   _id: string | Types.ObjectId;
+  userId: string;
   provider: string;
   requestId: string;
   status: string; // Porter statuses
@@ -49,6 +50,7 @@ const ParcelOrderSchema = new Schema<IParcelOrder>(
   {
     provider: { type: String, required: true },
     requestId: { type: String, required: true },
+    userId: { type: String },
     status: {
       type: String,
       enum: ["open", "live", "cancelled", "ended"],

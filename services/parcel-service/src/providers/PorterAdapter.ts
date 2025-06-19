@@ -70,7 +70,10 @@ export default class PorterAdapter extends BaseProvider {
   }
 
   // Create an order in porter
-  async createPorterOrder(req: OrderRequest): Promise<ParcelOrderResponse> {
+  async createPorterOrder(
+    req: OrderRequest,
+    userId: string
+  ): Promise<ParcelOrderResponse> {
     try {
       const referenceId = `ZFY${uuidv4()}`;
       (req as any).request_id = referenceId;
@@ -89,6 +92,7 @@ export default class PorterAdapter extends BaseProvider {
       const porterResponse = response.data;
       // const referenceId = `ZFY${uuidv4()}`;
       const saveOrder = await ParcelOrder.create({
+        userId,
         provider: "porter",
         requestId: referenceId,
         status: porterResponse?.status || "created",
@@ -125,7 +129,10 @@ export default class PorterAdapter extends BaseProvider {
     }
   }
 
-  async getPorterOrderStatus(req: PorterStatus): Promise<IParcelOrder | null> {
+  async getPorterOrderStatus(
+    req: PorterStatus,
+    userId: string
+  ): Promise<IParcelOrder | null> {
     try {
       const response = await axios.get(
         `${process.env.PORTER_HOST}/v1/orders/${req.orderId}`,
@@ -141,6 +148,7 @@ export default class PorterAdapter extends BaseProvider {
       const updatedOrder = await ParcelOrder.findOneAndUpdate(
         { "rawResponse.order_id": req.orderId },
         {
+          userId,
           status: data.status,
           partnerInfo: data.partner_info,
           orderTimings: data.order_timings,
@@ -178,7 +186,10 @@ export default class PorterAdapter extends BaseProvider {
   }
 
   // Function to cancel order
-  async cancelPorterOrder(req: PorterStatus): Promise<ProviderCancelResponse> {
+  async cancelPorterOrder(
+    req: PorterStatus,
+    userId: string
+  ): Promise<ProviderCancelResponse> {
     try {
       const response = await axios.post(
         `${process.env.PORTER_HOST}/v1/orders/${req.orderId}/cancel`,

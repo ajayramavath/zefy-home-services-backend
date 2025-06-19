@@ -140,6 +140,7 @@ export const getQuoteSchema: FastifySchema = {
       },
     },
     400: errorResponse,
+    401: errorResponse,
     500: errorResponse,
   },
 };
@@ -266,6 +267,7 @@ export const createOrderSchema: FastifySchema = {
       },
     },
     400: errorResponse,
+    401: errorResponse,
     500: errorResponse,
   },
 };
@@ -295,6 +297,7 @@ export const getOrderStatusSchema: FastifySchema = {
       },
     },
     400: errorResponse,
+    401: errorResponse,
     500: errorResponse,
   },
 };
@@ -325,6 +328,7 @@ export const cancelOrderSchema: FastifySchema = {
       },
     },
     400: errorResponse,
+    401: errorResponse,
     500: errorResponse,
   },
 };
