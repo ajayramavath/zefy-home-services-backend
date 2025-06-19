@@ -78,6 +78,7 @@ export default class PorterAdapter extends BaseProvider {
       const referenceId = `ZFY${uuidv4()}`;
       (req as any).request_id = referenceId;
       // req.request_id = referenceId;
+      console.log(JSON.stringify(req));
       const response = await axios.post(
         `${process.env.PORTER_HOST}/v1/orders/create`,
         req,
@@ -90,12 +91,13 @@ export default class PorterAdapter extends BaseProvider {
       );
 
       const porterResponse = response.data;
+      console.log("porterResponse---->", porterResponse);
       // const referenceId = `ZFY${uuidv4()}`;
       const saveOrder = await ParcelOrder.create({
         userId,
         provider: "porter",
         requestId: referenceId,
-        status: porterResponse?.status || "created",
+        status: porterResponse?.status || "open",
         pickup: req.pickup_details,
         drop: req.drop_details,
         deliveryInstructions: req.delivery_instructions,
@@ -104,6 +106,7 @@ export default class PorterAdapter extends BaseProvider {
 
       return saveOrder.toObject();
     } catch (error: any) {
+      console.log("error---->", error);
       const status = error.response?.status;
       const body = error.response?.data;
 

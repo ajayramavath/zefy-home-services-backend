@@ -98,6 +98,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
 
     const sessionId = auth.slice(7);
     const userId = await app.redis.get(`session:${sessionId}`);
+    console.log("userId----->", userId);
     if (!userId) {
       return reply.status(401).send({ error: "Invalid or expired session" });
     }
