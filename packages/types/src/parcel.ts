@@ -70,7 +70,7 @@ export interface Address {
 }
 
 export interface OrderRequest {
-  request_id: string;
+  // request_id: string | null;
   provider: string;
   delivery_instructions?: {
     instructions_list: Array<{

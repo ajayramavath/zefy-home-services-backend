@@ -72,6 +72,8 @@ export default class PorterAdapter extends BaseProvider {
   // Create an order in porter
   async createPorterOrder(req: OrderRequest): Promise<ParcelOrderResponse> {
     try {
+      const referenceId = `ZFY${uuidv4()}`;
+      req.request_id = referenceId;
       const response = await axios.post(
         `${process.env.PORTER_HOST}/v1/orders/create`,
         req,
@@ -84,7 +86,7 @@ export default class PorterAdapter extends BaseProvider {
       );
 
       const porterResponse = response.data;
-      const referenceId = `ZFY${uuidv4()}`;
+      // const referenceId = `ZFY${uuidv4()}`;
       const saveOrder = await ParcelOrder.create({
         provider: "porter",
         requestId: referenceId,

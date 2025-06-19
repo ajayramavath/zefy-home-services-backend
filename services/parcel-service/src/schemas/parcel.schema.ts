@@ -149,10 +149,9 @@ export const createOrderSchema: FastifySchema = {
   tags: ["Parcels"],
   body: {
     type: "object",
-    required: ["provider", "request_id", "pickup_details", "drop_details"],
+    required: ["provider", "pickup_details", "drop_details"],
     properties: {
       provider: { type: "string" },
-      request_id: { type: "string" },
       delivery_instructions: {
         type: "object",
         properties: {
