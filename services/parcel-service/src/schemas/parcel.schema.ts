@@ -72,9 +72,69 @@ export const getQuoteSchema: FastifySchema = {
             type: "object",
             properties: {
               provider: { type: "string" },
-              quote: { type: "object" },
-              error: { type: "string" },
+              quote: {
+                type: "object",
+                properties: {
+                  vehicles: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { type: "string" },
+                        eta: { type: ["integer", "null"] },
+                        fare: {
+                          type: "object",
+                          properties: {
+                            currency: { type: "string" },
+                            minor_amount: { type: "number" },
+                          },
+                          required: ["currency", "minor_amount"],
+                        },
+                        capacity: {
+                          type: "object",
+                          properties: {
+                            value: { type: "number" },
+                            unit: { type: "string" },
+                          },
+                          required: ["value", "unit"],
+                        },
+                        size: {
+                          type: "object",
+                          properties: {
+                            length: {
+                              type: "object",
+                              properties: {
+                                value: { type: "number" },
+                                unit: { type: "string" },
+                              },
+                            },
+                            breadth: {
+                              type: "object",
+                              properties: {
+                                value: { type: "number" },
+                                unit: { type: "string" },
+                              },
+                            },
+                            height: {
+                              type: "object",
+                              properties: {
+                                value: { type: "number" },
+                                unit: { type: "string" },
+                              },
+                            },
+                          },
+                          required: ["length", "breadth", "height"],
+                        },
+                      },
+                      required: ["type", "fare", "capacity", "size"],
+                    },
+                  },
+                },
+                required: ["vehicles"],
+              },
+              error: { type: "string", nullable: true },
             },
+            required: ["provider"],
           },
         },
       },

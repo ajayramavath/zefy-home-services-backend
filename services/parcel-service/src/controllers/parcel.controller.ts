@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { OrderRequest, QuoteRequest } from "packages/types/dist";
+import { OrderRequest, QuoteRequest } from "@zf/types";
 import { PorterStatus } from "../providers/PorterAdapter";
 import {
   GetQuotesResponse,
@@ -23,6 +23,7 @@ export class ParcelController {
     );
 
     const results = await Promise.all(quotePromises);
+    console.log("controller results---->", JSON.stringify(results));
     return reply.send({ success: true, data: results });
   }
 

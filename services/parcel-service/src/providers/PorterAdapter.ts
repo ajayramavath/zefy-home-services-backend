@@ -46,6 +46,7 @@ export default class PorterAdapter extends BaseProvider {
   // Get porter quotes for request
   async getQuote(req: QuoteRequest): Promise<QuoteResponse> {
     let body = req;
+    console.log("quote body----->", body);
     try {
       const response = await axios.post(
         `${process.env.PORTER_HOST}/v1/get_quote`,
@@ -57,7 +58,7 @@ export default class PorterAdapter extends BaseProvider {
           },
         }
       );
-
+      console.log("quote--->", response.data);
       return response.data;
     } catch (error: any) {
       console.error(
