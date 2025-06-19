@@ -4,7 +4,9 @@ import {
   cancelOrderSchema,
   createOrderSchema,
   getOrderStatusSchema,
+  getParcelOrderByIdSchema,
   getQuoteSchema,
+  listParcelOrdersSchema,
 } from "../schemas/parcel.schema";
 
 export default async function parcelRoutes(app: FastifyInstance) {
@@ -23,5 +25,16 @@ export default async function parcelRoutes(app: FastifyInstance) {
     "/orders/cancel",
     { schema: cancelOrderSchema },
     ParcelController.cancelPorterOrder
+  );
+
+  app.get(
+    "/orders/:orderId",
+    { schema: getParcelOrderByIdSchema },
+    ParcelController.getParcelOrderById
+  );
+  app.get(
+    "/orders",
+    { schema: listParcelOrdersSchema },
+    ParcelController.listParcelOrders
   );
 }
