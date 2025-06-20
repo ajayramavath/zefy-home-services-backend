@@ -138,7 +138,7 @@ export class ParcelController {
     const limit = Math.min(parseInt(req.query.limit || "10", 10), 50); // max 50
     const cursor = req.query.cursor ? new Date(req.query.cursor) : null;
 
-    const query: any = { _id: userId };
+    const query: any = { userId };
     if (cursor) {
       query.createdAt = { $lt: cursor }; // fetch older than cursor
     }
