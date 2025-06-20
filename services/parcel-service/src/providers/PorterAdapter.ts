@@ -137,8 +137,17 @@ export default class PorterAdapter extends BaseProvider {
     userId: string
   ): Promise<IParcelOrder | null> {
     try {
+      // First lookup by _id to get rawResponse.order_id
+      const localOrder = await ParcelOrder.findById(req.orderId).lean();
+
+      if (!localOrder || !localOrder.rawResponse?.order_id) {
+        throw new Error("Invalid order ID or missing Porter order_id");
+      }
+
+      const porterOrderId = localOrder.rawResponse.order_id;
+
       const response = await axios.get(
-        `${process.env.PORTER_HOST}/v1/orders/${req.orderId}`,
+        `${process.env.PORTER_HOST}/v1/orders/${porterOrderId}`,
         {
           headers: {
             "x-api-key": process.env.PORTER_API_KEY!,
@@ -148,8 +157,8 @@ export default class PorterAdapter extends BaseProvider {
 
       const data = response.data;
 
-      const updatedOrder = await ParcelOrder.findOneAndUpdate(
-        { "rawResponse.order_id": req.orderId },
+      const updatedOrder = await ParcelOrder.findByIdAndUpdate(
+        req.orderId,
         {
           userId,
           status: data.status,
@@ -174,10 +183,8 @@ export default class PorterAdapter extends BaseProvider {
           "An unexpected error occurred while retrieving the order",
       };
 
-      // Optional logging
       console.error("Porter API error:", apiError);
 
-      // Throw standardized error for controller or caller
       const err = new Error(apiError.message) as Error & {
         code: number;
         type: string;
@@ -194,8 +201,16 @@ export default class PorterAdapter extends BaseProvider {
     userId: string
   ): Promise<ProviderCancelResponse> {
     try {
+      const localOrder = await ParcelOrder.findById(req.orderId).lean();
+
+      if (!localOrder || !localOrder.rawResponse?.order_id) {
+        throw new Error("Invalid order ID or missing Porter order_id");
+      }
+
+      const porterOrderId = localOrder.rawResponse.order_id;
+
       const response = await axios.post(
-        `${process.env.PORTER_HOST}/v1/orders/${req.orderId}/cancel`,
+        `${process.env.PORTER_HOST}/v1/orders/${porterOrderId}/cancel`,
         {},
         {
           headers: {
@@ -206,11 +221,9 @@ export default class PorterAdapter extends BaseProvider {
 
       const result = response.data;
 
-      // Update order status in DB
-      await ParcelOrder.findOneAndUpdate(
-        { "rawResponse.order_id": req.orderId },
-        { status: "cancelled" }
-      );
+      await ParcelOrder.findByIdAndUpdate(req.orderId, {
+        status: "cancelled",
+      });
 
       return {
         code: result.code,
@@ -228,10 +241,8 @@ export default class PorterAdapter extends BaseProvider {
           "An unexpected error occurred while cancelling the order",
       };
 
-      // Optional logging
       console.error("Porter API error:", apiError);
 
-      // Throw standardized error for controller or caller
       const err = new Error(apiError.message) as Error & {
         code: number;
         type: string;
