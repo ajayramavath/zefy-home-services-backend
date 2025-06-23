@@ -26,8 +26,16 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
   );
 
   app.post(
+    "/confirmBooking",
+    // { schema: createBookingSchema },
+    AggregatorController.confirmBooking
+  );
+
+  // app.post("/confirmBooking");
+
+  app.post(
     "/bookingDetails",
-    { schema: getBookingDetailsSchema },
+    // { schema: getBookingDetailsSchema },
     AggregatorController.getBookingDetails
   );
 

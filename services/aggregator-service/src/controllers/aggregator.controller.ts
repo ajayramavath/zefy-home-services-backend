@@ -11,6 +11,7 @@ import {
   CancelBookingRequest,
   CancellationResult,
   ListBookingResult,
+  ConfirmRequestBody,
 } from "../aggregators/BaseAggregator";
 import { BookingModel, BookingStatus } from "../models/Booking.model";
 
@@ -29,6 +30,8 @@ interface CancelBookingBody extends CancelBookingRequest {}
 interface ListBookingsBody {
   // No body needed; userId from session
 }
+
+interface CreateConfirmBody extends ConfirmRequestBody {}
 
 export class AggregatorController {
   /**
@@ -200,14 +203,74 @@ export class AggregatorController {
   }
 
   /**
+   * POST /bookings
+   * Body: CreateBookingRequest fields
+   * Single‐aggregator booking: calls that adapter’s createBooking(...)
+   */
+  static async confirmBooking(
+    req: FastifyRequest<{ Body: CreateConfirmBody }>,
+    reply: FastifyReply
+  ) {
+    const userId = req.session.userId;
+
+    // 1) Validate that aggregator exists in server
+    let { aggregator } = req.body;
+    // if (!req.server.aggregators?.[aggregator]) {
+    //   return reply.status(400).send({ error: "Unknown aggregator" });
+    // }
+
+    // // 2) Fetch linked credentials for this user + aggregator
+    let creds: any = {};
+    try {
+      const accountDoc = await AggregatorAccountModel.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+        aggregator,
+      }).lean();
+      if (accountDoc) {
+        creds = accountDoc.creds;
+      }
+    } catch (err: any) {
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "Failed to fetch linked aggregator account" });
+    }
+
+    // 3) Call the adapter’s createBooking(...)
+    try {
+      if (!aggregator || !req.server.aggregators?.[aggregator]) {
+        aggregator = "gozo";
+      }
+      const adapter = req.server.aggregators![aggregator];
+      const bookingResult: BookingResult = await adapter.confirmBooking(
+        req.body
+      );
+      // bookingResult: { bookingId, referenceId, statusDesc, statusCode }
+      return reply.status(200).send(bookingResult);
+    } catch (err: any) {
+      // 4) Handle HoldError / ConfirmError
+      if (err.type === "HoldError" || err.type === "ConfirmError") {
+        return reply
+          .status(400)
+          .send({ errorCode: err.errorCode, errors: err.errors });
+      }
+      // 5) Unexpected error
+      req.log.error(err);
+      return reply
+        .status(500)
+        .send({ error: "INTERNAL_SERVER_ERROR", details: err.message });
+    }
+  }
+
+  /**
    * POST /booking/details
    */
   static async getBookingDetails(
     req: FastifyRequest<{ Body: BookingDetailsBody }>,
     reply: FastifyReply
   ) {
-    // const userId = req.session.userId;
-    const { universalBookingId, userId } = req.body;
+    const userId = req.session.userId;
+    const { universalBookingId } = req.body;
 
     let bookingDoc;
     try {

@@ -26,6 +26,11 @@ interface GozoHoldSuccess {
   referenceId: string;
   statusDesc: string;
   statusCode: number;
+  cabRate: {
+    cab: object;
+    fare: object;
+    cabModels: object;
+  };
   // …plus any other fields
 }
 
@@ -41,6 +46,11 @@ interface GozoConfirmSuccess {
   referenceId: string;
   statusDesc: string;
   statusCode: number;
+  cabRate: {
+    cab: object;
+    fare: object;
+    cabModels: object;
+  };
   // …plus any other fields
 }
 
@@ -681,18 +691,6 @@ export default class GozoAdapter extends BaseAggregator {
 
     // 8) Extract Gozo’s “bookingId” from hold response
     const gozoBookingId = holdRes.data.bookingId;
-    let vehicleType;
-    if ([1, 72].includes(req.vehicleCode)) {
-      vehicleType = "hatchback";
-    } else if ([3, 5, 73].includes(req.vehicleCode)) {
-      vehicleType = "sedan";
-    } else if ([2, 6, 74].includes(req.vehicleCode)) {
-      vehicleType = "suv";
-    } else {
-      throw new Error(
-        `GozoAdapter: unsupported vehicleCode="${req.vehicleCode}"`
-      );
-    }
 
     await BookingModel.create({
       universalBookingId: referenceId,
@@ -708,6 +706,30 @@ export default class GozoAdapter extends BaseAggregator {
       startTime: req.startTime,
     });
 
+    return {
+      bookingId: holdRes.data.bookingId,
+      fareData: holdRes.data?.cabRate?.fare,
+      cabData: holdRes.data?.cabRate?.cab,
+      referenceId: holdRes.data.referenceId,
+      statusDesc: holdRes.data.statusDesc,
+      statusCode: holdRes.data.statusCode,
+    };
+  }
+
+  async confirmBooking(req: {
+    aggregator: string;
+    referenceId: string;
+  }): Promise<BookingResult> {
+    const booking = await BookingModel.findOne({
+      adapter: req.aggregator,
+      universalBookingId: req.referenceId,
+    }).lean();
+    if (!booking) {
+      throw new Error(
+        `confirm booking: failed to fetch booking - ${req.referenceId} `
+      );
+    }
+    const gozoBookingId = booking.adapterBookingId;
     // 9) Call Gozo’s Confirm endpoint
     let confirmRes: GozoConfirmResponse;
     try {
@@ -740,7 +762,7 @@ export default class GozoAdapter extends BaseAggregator {
     }
     console.log(confirmRes);
     await BookingModel.findOneAndUpdate(
-      { universalBookingId: referenceId },
+      { universalBookingId: req.referenceId },
       {
         adapterBookingId: confirmRes.data.bookingId,
         status: "confirmed",
@@ -753,6 +775,8 @@ export default class GozoAdapter extends BaseAggregator {
       referenceId: confirmRes.data.referenceId,
       statusDesc: confirmRes.data.statusDesc,
       statusCode: confirmRes.data.statusCode,
+      // fareData: confirmRes.data?.cabRate?.fare,
+      // cabData: confirmRes.data?.cabRate?.cab,
     };
   }
 

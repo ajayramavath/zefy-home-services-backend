@@ -43,6 +43,8 @@ export interface BookingResult {
   referenceId: string; // ReferenceId (same as we passed)
   statusDesc: string; // e.g. "Confirmed"
   statusCode: number; // e.g. 200
+  cabData?: any;
+  fareData?: any;
 }
 
 // export interface BookingDetailsResult {
@@ -123,6 +125,11 @@ export interface ListBookingResult {
   [key: string]: any;
 }
 
+export interface ConfirmRequestBody {
+  aggregator: string;
+  referenceId: string;
+}
+
 export abstract class BaseAggregator {
   abstract name: string;
   abstract linkAccount(creds: unknown): Promise<Credentials>;
@@ -134,6 +141,7 @@ export abstract class BaseAggregator {
     creds: Credentials,
     req: CreateBookingRequest
   ): Promise<BookingResult>;
+  abstract confirmBooking(req: ConfirmRequestBody): Promise<BookingResult>;
   abstract getBookingDetails(
     creds: Credentials,
     universalBookingId: string,
