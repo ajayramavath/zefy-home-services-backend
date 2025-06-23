@@ -45,12 +45,40 @@ export interface BookingResult {
   statusCode: number; // e.g. 200
 }
 
+// export interface BookingDetailsResult {
+//   userId: string;
+//   universalBookingId: string;
+//   tripType: string;
+//   subType?: string | null;
+//   // plus any fields returned by Gozo's detail API
+//   [key: string]: any;
+// }
+
 export interface BookingDetailsResult {
   userId: string;
   universalBookingId: string;
   tripType: string;
   subType?: string | null;
-  // plus any fields returned by Gozo's detail API
+  driverDetails?: {
+    name: string;
+    contact: {
+      code: string;
+      number: string;
+    };
+    rating: number;
+  };
+  assignedVehicle?: {
+    id: number;
+    model: string;
+    hasCNG: number;
+    [key: string]: any;
+  };
+  fare?: {
+    baseFare: number;
+    gst: number;
+    totalAmount: number;
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 

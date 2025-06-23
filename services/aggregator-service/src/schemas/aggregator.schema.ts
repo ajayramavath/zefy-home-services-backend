@@ -363,10 +363,142 @@ export const getBookingDetailsSchema: FastifySchema = {
         fare: {
           type: "object",
           description: "Fare breakdown from confirmation",
+          properties: {
+            baseFare: { type: "number" },
+            driverAllowance: { type: "number" },
+            extraPerMinCharge: { type: "number" },
+            gst: { type: "number" },
+            gstRate: { type: "number" },
+            tollIncluded: { type: "number" },
+            stateTaxIncluded: { type: "number" },
+            stateTax: { type: "number" },
+            vendorAmount: { type: "number" },
+            vendorCollected: { type: "number" },
+            nightPickupIncluded: { type: "number" },
+            nightDropIncluded: { type: "number" },
+            customerPaid: { type: "number" },
+            dueAmount: { type: "number" },
+            totalAmount: { type: "number" },
+            discount: { type: "number" },
+            airportEntryFee: { type: "number" },
+            airportChargeIncluded: { type: "number" },
+            minPay: { type: "number" },
+            minPayPercent: { type: "number" },
+            advanceSlab: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  percentage: { type: "number" },
+                  value: { type: "number" },
+                  isSelected: { type: "number" },
+                  type: { type: "number" },
+                  label: { type: "string" },
+                },
+              },
+            },
+            promos: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "number" },
+                  promoUserType: { type: "number" },
+                  isActiveStatus: { type: "number" },
+                  allowNegativeAddon: { type: "number" },
+                },
+              },
+            },
+          },
         },
+        otp: {
+          type: "string",
+          description: "OTP for starting a ride",
+        },
+        driverDetails: {
+          type: "object",
+          description: "Driver metadata",
+          properties: {
+            name: { type: "string" },
+            contact: {
+              type: "object",
+              properties: {
+                code: { type: "string" },
+                number: { type: "string" },
+              },
+            },
+            rating: { type: "number" },
+          },
+        },
+        assignedVehicle: {
+          type: "object",
+          description: "Assigned vehicle metadata",
+          properties: {
+            isAttached: { type: "number" },
+            id: { type: "number" },
+            model: { type: "string" },
+            number: { type: "string" },
+            hasCNG: { type: "number" },
+            roofTop: { type: "number" },
+            licensePlate: { type: ["string", "null"] },
+            category: { type: ["string", "null"] },
+            hasElectric: { type: "number" },
+          },
+        },
+
         cabDetails: {
           type: "object",
           description: "Cab metadata from confirmation",
+          properties: {
+            id: { type: "integer" },
+            type: { type: "string" },
+            categoryId: { type: "string" },
+            category: { type: "string" },
+            sClass: { type: "string" },
+            instructions: {
+              type: "array",
+              items: { type: "string" },
+            },
+            image: { type: "string" },
+            seatingCapacity: { type: "integer" },
+            bagCapacity: { type: "integer" },
+            bigBagCapaCity: { type: "integer" },
+            isAssured: { type: "string" },
+            tierCabs: { type: "array", items: {} },
+            cabCategory: {
+              type: "object",
+              properties: {
+                id: { type: "integer" },
+                type: { type: "string" },
+                catClass: { type: "string" },
+                scvParent: { type: "string" },
+                scvVehicleId: { type: "string" },
+                scvVehicleModel: { type: "string" },
+                scvVehicleServiceClass: { type: "string" },
+                scvmodel: { type: "string" },
+                catRank: { type: "string" },
+                catClassRank: { type: "string" },
+              },
+            },
+            rating: { type: "string" },
+            filter: {
+              type: "object",
+              properties: {
+                seating: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                baggage: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+                cabType: {
+                  type: "array",
+                  items: { type: "integer" },
+                },
+              },
+            },
+          },
         },
         createdAt: {
           type: "string",
@@ -619,14 +751,6 @@ export const listBookingsSchema: FastifySchema = {
               status: {
                 type: "string",
                 description: "Current booking status",
-              },
-              fare: {
-                type: "object",
-                description: "Fare breakdown from confirm response",
-              },
-              cabDetails: {
-                type: "object",
-                description: "Cab metadata from confirm response",
               },
             },
           },
