@@ -80,12 +80,15 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("/users/health") ||
       req.url.startsWith("/aggregator/docs") ||
       req.url.startsWith("/aggregator/health") ||
+      req.url.startsWith("/parcel/docs") ||
+      req.url.startsWith("/parcel/health") ||
       req.url.startsWith("/health") ||
       req.url.startsWith("docs") ||
       req.url.startsWith("/users/getData") ||
       req.url.startsWith("/aggregator/cancellationList") ||
       req.url.startsWith("/aggregator/webhooks/gozo") ||
-      req.url.startsWith("/aggregator/bookingDetails")
+      req.url.startsWith("/aggregator/bookingDetails") ||
+      req.url.startsWith("/parcel/quotes")
     ) {
       return;
     }
@@ -97,6 +100,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
 
     const sessionId = auth.slice(7);
     const userId = await app.redis.get(`session:${sessionId}`);
+    console.log("userId----->", userId);
     if (!userId) {
       return reply.status(401).send({ error: "Invalid or expired session" });
     }

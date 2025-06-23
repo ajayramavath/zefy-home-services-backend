@@ -87,7 +87,19 @@ services:
       - ./services/aggregator-service/.env
     ports:
       - "3002:3000"
-
+  parcel-service:
+    build:
+      context: .
+      dockerfile: services/parcel-service/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+    env_file:
+      - ./services/parcel-service/.env
+    ports:
+      - "3003:3000"
 volumes:
   mongo-data:
   redis-data:

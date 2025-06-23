@@ -18,6 +18,13 @@ export default async function routes(app: FastifyInstance) {
     http2: false, // optional: only if you’re not using HTTP/2 for upstream
   });
 
+  app.register(proxy, {
+    upstream: process.env.PARCEL_SERVICE_URL || "http://parcel-service:3000",
+    prefix: "/parcel",
+    rewritePrefix: "/parcel",
+    http2: false, // optional: only if you’re not using HTTP/2 for upstream
+  });
+
   // Health check
   app.get("/health", async () => ({ status: "ok" }));
 }
