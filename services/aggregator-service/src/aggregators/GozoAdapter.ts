@@ -957,6 +957,7 @@ export default class GozoAdapter extends BaseAggregator {
     const docs = await BookingModel.find({
       adapter: this.name,
       "requestPayload.userId": userId,
+      status: { $ne: "created" }, // exclude bookings with status "created"
     }).lean();
     console.log("docs----->", docs);
     // 2) Map each stored booking into a minimal details result
