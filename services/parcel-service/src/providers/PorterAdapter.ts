@@ -172,6 +172,7 @@ export default class PorterAdapter extends BaseProvider {
 
       return updatedOrder?.toObject() || null;
     } catch (error: any) {
+      console.log("status error------->", error);
       const status = error.response?.status;
       const body = error.response?.data;
 
