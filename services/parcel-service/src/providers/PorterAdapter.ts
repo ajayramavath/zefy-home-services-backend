@@ -29,7 +29,7 @@ export interface ParcelOrderResponse {
   pickup: any;
   drop: any;
   deliveryInstructions?: any;
-  rawResponse: any;
+  createResponse?: any;
   createdAt: Date;
 }
 
@@ -101,7 +101,7 @@ export default class PorterAdapter extends BaseProvider {
         pickup: req.pickup_details,
         drop: req.drop_details,
         deliveryInstructions: req.delivery_instructions,
-        rawResponse: porterResponse,
+        createResponse: porterResponse,
       });
 
       return saveOrder.toObject();
@@ -165,7 +165,7 @@ export default class PorterAdapter extends BaseProvider {
           partnerInfo: data.partner_info,
           orderTimings: data.order_timings,
           fareDetails: data.fare_details,
-          rawResponse: data,
+          statusResponse: data,
         },
         { new: true }
       );

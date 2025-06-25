@@ -27,6 +27,8 @@ export interface IParcelOrder extends Document {
       long: number;
     } | null;
   } | null;
+  createResponse?: any;
+  statusResponse?: any;
   orderTimings?: {
     pickup_time: number;
     order_accepted_time: number | null;
@@ -60,7 +62,8 @@ const ParcelOrderSchema = new Schema<IParcelOrder>(
     drop: { type: Schema.Types.Mixed, required: true },
     deliveryInstructions: { type: Schema.Types.Mixed },
     rawResponse: { type: Schema.Types.Mixed },
-
+    createResponse: { type: Schema.Types.Mixed },
+    statusResponse: { type: Schema.Types.Mixed },
     partnerInfo: {
       name: String,
       vehicle_number: String,
