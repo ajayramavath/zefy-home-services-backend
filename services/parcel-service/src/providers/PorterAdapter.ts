@@ -140,11 +140,11 @@ export default class PorterAdapter extends BaseProvider {
       // First lookup by _id to get rawResponse.order_id
       const localOrder = await ParcelOrder.findById(req.orderId).lean();
 
-      if (!localOrder || !localOrder.rawResponse?.order_id) {
+      if (!localOrder || !localOrder.createResponse?.order_id) {
         throw new Error("Invalid order ID or missing Porter order_id");
       }
 
-      const porterOrderId = localOrder.rawResponse.order_id;
+      const porterOrderId = localOrder.createResponse.order_id;
 
       const response = await axios.get(
         `${process.env.PORTER_HOST}/v1/orders/${porterOrderId}`,
@@ -204,11 +204,11 @@ export default class PorterAdapter extends BaseProvider {
     try {
       const localOrder = await ParcelOrder.findById(req.orderId).lean();
 
-      if (!localOrder || !localOrder.rawResponse?.order_id) {
+      if (!localOrder || !localOrder.createResponse?.order_id) {
         throw new Error("Invalid order ID or missing Porter order_id");
       }
 
-      const porterOrderId = localOrder.rawResponse.order_id;
+      const porterOrderId = localOrder.createResponse.order_id;
 
       const response = await axios.post(
         `${process.env.PORTER_HOST}/v1/orders/${porterOrderId}/cancel`,
