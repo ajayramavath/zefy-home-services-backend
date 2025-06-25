@@ -21,7 +21,7 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
 
   app.post(
     "/createBooking",
-    { schema: createBookingSchema },
+    // { schema: createBookingSchema },
     AggregatorController.createBooking
   );
 
@@ -41,7 +41,7 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
 
   app.post(
     "/cancellationList",
-    { schema: getCancellationListSchema },
+    // { schema: getCancellationListSchema },
     AggregatorController.getCancellationList
   );
 
@@ -54,7 +54,7 @@ export default async function aggregatorRoutes(app: FastifyInstance) {
 
   app.get(
     "/bookingList",
-    { schema: listBookingsSchema },
+    // { schema: listBookingsSchema },
     AggregatorController.listBookings
   );
 }

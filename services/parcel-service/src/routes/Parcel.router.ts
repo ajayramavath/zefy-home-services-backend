@@ -13,28 +13,28 @@ export default async function parcelRoutes(app: FastifyInstance) {
   app.post("/quotes", { schema: getQuoteSchema }, ParcelController.getQuote);
   app.post(
     "/orders/create",
-    { schema: createOrderSchema },
+    // { schema: createOrderSchema },
     ParcelController.createPorterOrder
   );
   app.post(
     "/orders/status",
-    { schema: getOrderStatusSchema },
+    // { schema: getOrderStatusSchema },
     ParcelController.getPorterOrderStatus
   );
   app.post(
     "/orders/cancel",
-    { schema: cancelOrderSchema },
+    // { schema: cancelOrderSchema },
     ParcelController.cancelPorterOrder
   );
 
   app.get(
     "/orders/:orderId",
-    { schema: getParcelOrderByIdSchema },
+    // { schema: getParcelOrderByIdSchema },
     ParcelController.getParcelOrderById
   );
   app.get(
     "/orders",
-    { schema: listParcelOrdersSchema },
+    // { schema: listParcelOrdersSchema },
     ParcelController.listParcelOrders
   );
 }
