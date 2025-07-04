@@ -3,11 +3,13 @@
 # 1) Use Node.js 22.14.0 on Alpine
 FROM node:22.14.0-alpine
 
+RUN corepack enable
+
 # 2) Set working directory to monorepo root for build
 WORKDIR /zefy-backend
 
 # 3) Copy root manifest, lockfile, and base TS config
-COPY package.json yarn.lock tsconfig.base.json ./
+COPY package.json yarn.lock tsconfig.base.json .yarnrc.yml ./
 
 # 4) Copy shared packages for workspace resolution
 COPY packages ./packages
@@ -19,7 +21,7 @@ COPY services/gateway/package.json services/gateway/tsconfig.json ./services/gat
 COPY services/gateway/src ./services/gateway/src
 
 # 7) Install dependencies for all workspaces
-RUN yarn install --frozen-lockfile
+RUN yarn install
 
 # 8) Build only the gateway workspace
 RUN yarn workspace @zf/gateway build

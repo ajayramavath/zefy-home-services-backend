@@ -14,7 +14,7 @@ app.register(swagger, {
   openapi: {
     info: {
       title: "Zefy Backend API",
-      description: "Gateway + aggregation endpoints",
+      description: "Gateway endpoints",
       version: "1.0.0",
     },
     servers: [{ url: "/", description: "Local dev" }],

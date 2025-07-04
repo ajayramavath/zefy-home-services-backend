@@ -9,8 +9,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn workspaces run build",
-    "dev":   "yarn workspaces run dev",
-    "lint":  "yarn workspaces run lint"
+    "build": "yarn workspaces foreach -A run build",
+    "dev": "yarn workspaces foreach -A run dev",
+    "lint": "yarn workspaces run lint",
+    "start": "yarn workspaces foreach -A run start"
+  },
+  "packageManager": "yarn@4.9.2",
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3"
   }
 }

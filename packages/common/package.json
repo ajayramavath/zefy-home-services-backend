@@ -7,5 +7,19 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -b"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "dependencies": {
+    "typescritp": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3"
   }
 }

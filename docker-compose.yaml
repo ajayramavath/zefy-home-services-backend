@@ -74,32 +74,6 @@ services:
     # Tell the Admin SDK where to find it
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/zefy-30706-c8da4feed63f.json
-  aggregator-service:
-    build:
-      context: .
-      dockerfile: services/aggregator-service/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    env_file:
-      - ./services/aggregator-service/.env
-    ports:
-      - "3002:3000"
-  parcel-service:
-    build:
-      context: .
-      dockerfile: services/parcel-service/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    env_file:
-      - ./services/parcel-service/.env
-    ports:
-      - "3003:3000"
 volumes:
   mongo-data:
   redis-data:
