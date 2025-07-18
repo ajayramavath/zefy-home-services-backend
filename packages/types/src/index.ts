@@ -1,2 +1,6 @@
 export * from "./auth";
 export * from "./user";
+export * from "./partner";
+export * from "./booking";
+export * from "./hub";
+export * from "./service";

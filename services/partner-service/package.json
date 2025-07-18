@@ -1,0 +1,20 @@
+{
+  "name": "@zf/partner-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@zf/types": "workspace:*",
+    "fastify": "^5.4.0",
+    "mongoose": "^8.16.4"
+  }
+}
