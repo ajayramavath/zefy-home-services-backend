@@ -15,22 +15,16 @@ const serviceSchema = new Schema<IService>(
       type: String,
       required: true,
     },
-    category: {
-      type: String,
-      enum: ['cleaning', 'laundry', 'car_care'],
-      required: true,
-    },
-    type: {
-      type: String,
-      enum: ['house_cleaning', 'dishwashing', 'car_cleaning', 'laundry', 'bathroom_cleaning'],
-      required: true,
-      unique: true,
-    },
     description: {
       type: String,
       required: true,
     },
     icon: String,
+    isPackage: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
     basePrice: {
       type: Number,
       required: true,
@@ -41,69 +35,33 @@ const serviceSchema = new Schema<IService>(
       required: true,
       default: 3,
     },
-    minimumDuration: {
+    estimatedDuration: {
       type: Number,
       required: true,
-      default: 45,
     },
-    maximumDuration: {
-      type: Number,
+    tasksIncluded: [{
+      type: String,
       required: true,
-      default: 240,
-    },
-    availablePackages: [{
-      type: {
-        type: String,
-        enum: ['one-time', 'daily', 'weekly'],
-        required: true,
-      },
-      discount: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 100,
-      },
-      minDays: Number,
     }],
-    tasks: [{
-      id: {
-        type: String,
-        required: true,
-      },
-      name: {
-        type: String,
-        required: true,
-      },
-      description: String,
-      isDefault: {
-        type: Boolean,
-        default: false,
-      },
+    tasksExcluded: [{
+      type: String,
+      required: true,
     }],
-    addOns: [{
-      id: {
-        type: String,
-        required: true,
-      },
-      name: {
-        type: String,
-        required: true,
-      },
-      price: {
-        type: Number,
-        required: true,
-        min: 0,
-      },
-      description: String,
-    }],
-    isActive: {
+    isAvailable: {
       type: Boolean,
       default: true,
-    },
+      required: true,
+    }
   },
   {
     timestamps: true,
   }
 );
+
+serviceSchema.virtual('hubs', {
+  ref: 'HubService',
+  localField: 'serviceId',
+  foreignField: 'serviceId',
+});
 
 export const Service = model<IService>('Service', serviceSchema);

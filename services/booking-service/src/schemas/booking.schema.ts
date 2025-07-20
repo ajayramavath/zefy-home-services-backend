@@ -146,4 +146,57 @@ export const createBookingSchema: FastifySchema = {
       }
     },
   },
+  response: {
+    201: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: { type: 'object' },
+        message: { type: 'string' },
+      },
+    },
+    400: {
+      description: "Validation error",
+      type: "object",
+      properties: { error: { type: "string" } },
+      required: ["error"],
+    },
+  },
+}
+
+export const cancleBookingSchema: FastifySchema = {
+  body: {
+    type: 'object',
+    required: ['bookingId', 'reason'],
+    properties: {
+      bookingId: { type: 'string' },
+      reason: { type: 'string' },
+      feedback: { type: 'string' }
+    }
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+      }
+    },
+    403: {
+      type: 'object',
+      description: 'Cancellation not allowed',
+      properties: {
+        error: { type: 'string' },
+        message: { type: 'string' }
+      }
+    },
+    404: {
+      type: 'object',
+      description: 'Booking not found',
+      properties: {
+        error: { type: 'string' },
+        message: { type: 'string' }
+      }
+    }
+  }
 }

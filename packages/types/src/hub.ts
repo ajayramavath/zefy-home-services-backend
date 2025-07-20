@@ -16,11 +16,7 @@ export interface IHub {
     type: 'Polygon';
     coordinates: number[][][]; // GeoJSON Polygon
   };
-  operationalHours: {
-    start: string;
-    end: string;
-  };
-  services: string[]; // Service IDs available at this hub
+  services: string[];
   partnerCount: number;
   managers: {
     name: string;

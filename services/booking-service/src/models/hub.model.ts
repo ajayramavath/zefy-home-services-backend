@@ -9,7 +9,7 @@ const hubSchema = new Schema<IHub>(
     hubId: {
       type: String,
       unique: true,
-      default: () => `HUB${nanoid(4)}`,
+      default: () => `HUB${nanoid()}`,
     },
     name: {
       type: String,
@@ -46,24 +46,12 @@ const hubSchema = new Schema<IHub>(
     serviceArea: {
       type: {
         type: String,
-        enum: ['Polygon'],
+        enum: ['Polygon', 'MultiPolygon'],
         required: true,
       },
       coordinates: {
         type: [[[Number]]],
         required: true,
-      },
-    },
-    operationalHours: {
-      start: {
-        type: String,
-        required: true,
-        default: '08:00',
-      },
-      end: {
-        type: String,
-        required: true,
-        default: '20:00',
       },
     },
     services: [{
@@ -97,5 +85,11 @@ const hubSchema = new Schema<IHub>(
 
 hubSchema.index({ serviceArea: '2dsphere' });
 hubSchema.index({ 'address.coordinates': '2dsphere' });
+
+hubSchema.virtual('services', {
+  ref: 'HubService',
+  localField: 'hubId',
+  foreignField: 'hubId',
+});
 
 export const Hub = model<IHub>('Hub', hubSchema);
