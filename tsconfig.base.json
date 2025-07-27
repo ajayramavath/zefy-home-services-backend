@@ -1,25 +1,24 @@
 {
     "compilerOptions": {
-        "target": "ES2019",
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "outDir": "dist",
-        "rootDir": ".",
-        "strict": true,
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "module": "CommonJS",
+        "target": "ES2022",
         "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "moduleResolution": "node",
+        "declaration": false,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowImportingTsExtensions": false,
         "resolveJsonModule": true,
-        "baseUrl": ".",
-        "paths": {
-            "@zf/common": [
-                "packages/common/dist/index"
-            ],
-            "@zf/common/*": [
-                "packages/common/dist/*"
-            ]
-        }
+        "isolatedModules": true,
+        "noEmitOnError": false
     },
+    "include": [
+        "src/**/*"
+    ],
     "exclude": [
         "node_modules",
         "dist"

@@ -9,7 +9,7 @@ import {
 } from '../schemas/partner.schema';
 import { Static } from '@sinclair/typebox';
 import { Availability } from "../models/availability.model";
-import { IAvailability } from "packages/types/dist";
+import { IAvailability } from "@zf/types";
 
 // Extract the request type from the schema
 type UpdateOnboardingStepRequest = FastifyRequest<{

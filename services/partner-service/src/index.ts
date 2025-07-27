@@ -46,7 +46,7 @@ async function start() {
     fastify.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
     await fastify.register(authPlugin);
 
-    fastify.get('/health', async () => {
+    fastify.get('/partners/health', async () => {
       return {
         status: 'OK',
         service: 'partner-service'
@@ -54,7 +54,7 @@ async function start() {
     });
 
     // Register partner routes at root level (gateway will prefix with /partners)
-    await fastify.register(partnerRoutes);
+    await fastify.register(partnerRoutes, { prefix: '/partners' });
 
     // Start server
     const port = Number(process.env.PORT) || 3002;

@@ -18,6 +18,14 @@ export default async function routes(app: FastifyInstance) {
     http2: false,
   });
 
+  // Proxy /bookings/* to the booking-service
+  app.register(proxy, {
+    upstream: process.env.BOOKING_SERVICE_URL || "http://booking-service:3000",
+    prefix: "/bookings",
+    rewritePrefix: "/bookings",
+    http2: false,
+  });
+
   // Health check
   app.get("/health", async () => ({ status: "ok" }));
 }

@@ -893,10 +893,14 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@zf/booking-service@workspace:services/booking-service"
   dependencies:
+    "@types/amqplib": "npm:^0.10.7"
+    "@types/redis": "npm:^4.0.11"
     "@zf/types": "workspace:*"
+    amqplib: "npm:^0.10.7"
     fastify: "npm:^5.4.0"
     mongoose: "npm:^8.16.4"
     nanoid: "npm:^5.1.5"
+    redis: "npm:^4.7.0"
     typescript: "npm:^5.8.3"
   languageName: unknown
   linkType: soft
@@ -939,12 +943,16 @@ __metadata:
     "@fastify/swagger": "npm:^9.5.0"
     "@fastify/swagger-ui": "npm:^5.2.2"
     "@sinclair/typebox": "npm:^0.34.38"
+    "@types/amqplib": "npm:^0.10.7"
     "@types/jsonwebtoken": "npm:^9"
+    "@types/redis": "npm:^4.0.11"
     "@zf/common": "workspace:*"
     "@zf/types": "workspace:*"
+    amqplib: "npm:^0.10.7"
     fastify: "npm:^5.4.0"
     jsonwebtoken: "npm:^9.0.2"
     mongoose: "npm:^8.16.4"
+    redis: "npm:^4.7.0"
     typescript: "npm:^5.8.3"
   languageName: unknown
   linkType: soft

@@ -46,7 +46,7 @@ app.register(swaggerUI, {
 });
 
 app.register(userRoutes, { prefix: "/users" });
-app.get("/health", async () => ({ status: "ok" }));
+app.get("/users/health", async () => ({ status: "ok", service: "user-service" }));
 
 const start = async () => {
   try {

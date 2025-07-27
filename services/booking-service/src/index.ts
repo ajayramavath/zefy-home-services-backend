@@ -21,7 +21,7 @@ app.register(sessionPlugin, {
 
 
 // Health check
-app.get("/health", async () => ({ status: "ok" }));
+app.get("/bookings/health", async () => ({ status: "ok", service: "booking-service" }));
 
 const start = async () => {
   try {
