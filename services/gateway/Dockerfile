@@ -1,7 +1,7 @@
 # services/gateway/Dockerfile
 
-# 1) Use Node.js 22.14.0 on Alpine
-FROM node:22.14.0-alpine
+# 1) Use Node.js 22 on Alpine
+FROM node:22-alpine
 
 RUN corepack enable
 

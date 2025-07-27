@@ -7,134 +7,122 @@ const partnerSchema = new Schema<IPartner>(
       type: String,
       required: true,
       unique: true,
-      index: true,
+      ref: 'User',
     },
+
+    // Personal info
     personalInfo: {
-      firstName: {
-        type: String,
-        required: true,
-        trim: true,
+      type: {
+        fullName: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        dateOfBirth: {
+          type: Date,
+          required: true,
+        },
+        gender: {
+          type: String,
+          enum: ['male', 'female', 'other'],
+          required: true,
+        },
+        profilePicture: String,
       },
-      lastName: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      dateOfBirth: {
-        type: Date,
-        required: true,
-      },
-      gender: {
-        type: String,
-        enum: ['male', 'female', 'other'],
-        required: true,
-      },
-      profilePicture: String,
+      required: function () { return this.completionStep >= 1; }
     },
-    contact: {
-      phone: {
-        type: String,
-        required: true,
-      },
-      email: String,
-      emergencyContact: String,
+
+
+    serviceIDs: {
+      type: [String],
+      required: function () { return this.completionStep >= 2; },
+      validate: {
+        validator: function (v: string[]) {
+          return this.completionStep < 2 || (v && v.length > 0);
+        },
+        message: 'At least one service must be selected'
+      }
     },
-    address: {
-      street: {
-        type: String,
-        required: true,
-      },
-      city: {
-        type: String,
-        required: true,
-      },
-      state: {
-        type: String,
-        required: true,
-      },
-      pincode: {
-        type: String,
-        required: true,
-      },
-      coordinates: {
-        lat: Number,
-        lng: Number,
-      },
+
+
+    availabilityId: {
+      type: String,
+      ref: 'Availability',
+      required: function () { return this.completionStep >= 3; }
     },
+
+
     bankDetails: {
-      accountHolderName: {
-        type: String,
-        required: true,
+      type: {
+        accountHolderName: {
+          type: String,
+          required: true,
+        },
+        accountNumber: {
+          type: String,
+          required: true,
+        },
+        ifscCode: {
+          type: String,
+          required: true,
+        },
+        bankName: {
+          type: String,
+          required: true,
+        }
       },
-      accountNumber: {
-        type: String,
-        required: true,
-      },
-      ifscCode: {
-        type: String,
-        required: true,
-      },
-      bankName: {
-        type: String,
-        required: true,
-      },
-      upiId: String,
+      required: function () { return this.completionStep >= 4; }
     },
-    services: [{
+
+
+    verification: {
+      type: {
+        idProof: {
+          type: {
+            type: String,
+            enum: ['aadhaar', 'pan', 'driving_license'],
+          },
+          number: String,
+          verified: {
+            type: Boolean,
+            default: false,
+          },
+          selfiePhoto: String,
+          idFrontPhoto: String,
+          idBackPhoto: String,
+        },
+        backgroundCheck: {
+          status: {
+            type: String,
+            enum: ['pending', 'completed', 'failed'],
+            default: 'pending',
+          },
+          completedAt: Date,
+        }
+      },
+      required: function () { return this.completionStep >= 4; }
+    },
+    status: {
       type: String,
-      ref: 'Service',
-    }],
-    operationalHubs: [{
-      type: String,
-      ref: 'Hub',
-    }],
-    availability: {
-      isAvailable: {
+      enum: ['incomplete', 'pending_approval', 'approved', 'rejected'],
+      default: 'incomplete',
+    },
+    completionStep: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 4,
+    },
+    approvedAt: Date,
+    training: {
+      video: {
         type: Boolean,
         default: false,
       },
-      workingDays: {
-        type: [Number],
-        default: [1, 2, 3, 4, 5, 6], // Monday to Saturday
-        validate: {
-          validator: (days: number[]) => days.every(d => d >= 0 && d <= 6),
-          message: 'Working days must be between 0-6',
-        },
-      },
-      workingHours: {
-        start: {
-          type: String,
-          default: '09:00',
-        },
-        end: {
-          type: String,
-          default: '18:00',
-        },
-      },
-      unavailableDates: [Date],
-    },
-    verification: {
-      idProof: {
-        type: {
-          type: String,
-          enum: ['aadhaar', 'pan', 'driving_license'],
-        },
-        number: String,
-        verified: {
-          type: Boolean,
-          default: false,
-        },
-        frontPhoto: String,
-        backPhoto: String,
-      },
-      backgroundCheck: {
-        status: {
-          type: String,
-          enum: ['pending', 'completed', 'failed'],
-          default: 'pending',
-        },
-        completedAt: Date,
-      },
+      quiz: {
+        type: Boolean,
+        default: false,
+      }
     },
     ratings: {
       average: {
@@ -158,29 +146,40 @@ const partnerSchema = new Schema<IPartner>(
         default: 0,
       },
       lastPayoutDate: Date,
-    },
-    status: {
-      type: String,
-      enum: ['pending', 'active', 'inactive', 'suspended'],
-      default: 'pending',
-    },
-    joinedAt: {
-      type: Date,
-      default: Date.now,
-    },
-    lastActiveAt: {
-      type: Date,
-      default: Date.now,
-    },
+    }
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes for efficient queries
-partnerSchema.index({ 'address.coordinates': '2dsphere' });
-partnerSchema.index({ operationalHubs: 1, 'availability.isAvailable': 1 });
-partnerSchema.index({ services: 1, status: 1 });
+partnerSchema.index({ userId: 1 }, { unique: true });
+partnerSchema.index({ status: 1 });
+partnerSchema.index({ completionStep: 1 });
+
+partnerSchema.methods.isStepComplete = function (step: number): boolean {
+  return this.completionStep >= step;
+};
+
+partnerSchema.methods.canProceedToStep = function (step: number): boolean {
+  return this.completionStep >= (step - 1);
+};
+
+partnerSchema.methods.markStepComplete = function (step: number) {
+  if (step > this.completionStep) {
+    this.completionStep = step;
+
+    if (step === 4) {
+      this.status = 'pending_approval';
+    }
+  }
+};
+
+partnerSchema.pre('save', function (next) {
+  if (this.completionStep === 4 && this.status === 'incomplete') {
+    this.status = 'pending_approval';
+  }
+  next();
+});
 
 export const Partner = model<IPartner>('Partner', partnerSchema);

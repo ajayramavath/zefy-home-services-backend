@@ -1,6 +1,4 @@
-// services/user-service/src/schemas/profile.schema.ts
 import { FastifySchema } from "fastify";
-import { FavoriteType } from "../models/user.model";
 
 const locationProps = {
   name: { type: "string" },

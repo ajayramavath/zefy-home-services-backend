@@ -9,17 +9,14 @@ import {
   sessionPlugin,
 } from "@zf/common";
 import userRoutes from "./routes/user.routes";
-import favoritesRoutes from "./routes/favorites.routes";
-import firebasePlugin from "./plugins/firebase";
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const app = Fastify({ logger: true });
 
 // Register plugins
 app.register(mongoosePlugin, { uri: process.env.MONGO_URI! });
 app.register(redisPlugin, { url: process.env.REDIS_URL! });
 app.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
-app.register(firebasePlugin);
 app.register(sessionPlugin, {
   // e.g. 7 days
   ttlSeconds: 180 * 24 * 3600,
@@ -35,12 +32,10 @@ app.register(swagger, {
     },
     servers: [{ url: "/", description: "Local dev" }],
   },
-
-  // you can also pass `refResolver`, `security`, `components`, etc.
 });
 
 app.register(swaggerUI, {
-  routePrefix: "/users/docs", // host the interactive UI at /docs
+  routePrefix: "/users/docs",
   uiConfig: {
     docExpansion: "none",
     deepLinking: false,
@@ -48,15 +43,9 @@ app.register(swaggerUI, {
   },
   staticCSP: true,
   transformStaticCSP: (header) => header,
-  // if you need to tweak the generated spec before UI renders, use:
-  // transformSpecification: (swaggerObject, req, reply) => { …; return swaggerObject; },
 });
 
-// Register routes
 app.register(userRoutes, { prefix: "/users" });
-app.register(favoritesRoutes, { prefix: "/users" });
-
-// Health check
 app.get("/health", async () => ({ status: "ok" }));
 
 const start = async () => {
@@ -68,5 +57,11 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+process.on('SIGINT', async () => {
+  app.log.info('Received SIGINT, shutting down gracefully...');
+  await app.close();
+  process.exit(0);
+});
 
 start();

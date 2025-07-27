@@ -15,19 +15,19 @@ COPY package.json yarn.lock tsconfig.base.json .yarnrc.yml ./
 COPY packages ./packages
 
 # 5) Copy user-service workspace manifest and TS config
-COPY services/user-service/package.json services/user-service/tsconfig.json ./services/user-service/
+COPY services/partner-service/package.json services/partner-service/tsconfig.json ./services/partner-service/
 
 # 6) Copy user-service source files
-COPY services/user-service/src ./services/user-service/src
+COPY services/partner-service/src ./services/partner-service/src
 
 # 7) Install dependencies for all workspaces
 RUN yarn install
 
 # 8) Build only the user-service workspace
-RUN yarn workspace @zf/user-service build
+RUN yarn workspace @zf/partner-service build
 
 # 9) Set working directory to the user-service folder for runtime
-WORKDIR /zefy-backend/services/user-service
+WORKDIR /zefy-backend/services/partner-service
 
 # 10) Expose HTTP port
 EXPOSE 3000
