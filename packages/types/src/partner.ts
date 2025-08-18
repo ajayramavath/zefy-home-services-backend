@@ -24,7 +24,8 @@ export interface IPartner {
       number: string;
       verified: boolean;
       selfiePhoto: string;
-      idPhoto: string;
+      idFrontPhoto: string;
+      idBackPhoto: string;
     };
     backgroundCheck: {
       status: 'pending' | 'completed' | 'failed';
