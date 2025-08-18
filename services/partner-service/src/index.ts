@@ -88,9 +88,9 @@ async function start() {
 
     await fastify.register(partnerRoutes, { prefix: '/partners' });
 
-    const port = Number(process.env.PORT) || 3000;
+    const port = Number(process.env.PORT) || 3003;
 
-    await fastify.listen({ port, host: '0.0.0.0' });
+    await fastify.listen({ port });
 
     fastify.log.info(`🚀 Partner Service running on http://0.0.0.0:${port}`);
     fastify.log.info(`📚 API Documentation: http://localhost:${port}/docs`);

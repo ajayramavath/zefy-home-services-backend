@@ -13,7 +13,7 @@ import { bookingRoutes } from "./routes/booking.routes";
 import { BookingsEventPublisher } from "./events/publisher";
 import { BookingEventConsumer } from "./events/consumer";
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3002;
 const app = Fastify({
   logger: {
     level: 'info',
@@ -52,7 +52,7 @@ const start = async () => {
     app.register(hubRoutes, { prefix: "/bookings" });
     app.register(bookingRoutes, { prefix: "/bookings" });
 
-    await app.listen({ port: PORT, host: '0.0.0.0' });
+    await app.listen({ port: PORT });
     app.log.info(`🚀 booking-service running on port ${PORT}`);
   } catch (err) {
     app.log.error(err);

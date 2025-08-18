@@ -8,12 +8,7 @@ services:
     volumes:
       - mongo-data:/data/db
     restart: unless-stopped
-    # environment:
-    #   - MONGO_INITDB_ROOT_USERNAME=admin
-    #   - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-defaultpassword123}
     command: mongod --quiet --logpath /dev/null
-    networks:
-      - zefy-network
 
   redis:
     image: redis:7-alpine
@@ -23,8 +18,6 @@ services:
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes --loglevel warning --requirepass ${REDIS_PASSWORD:-defaultpassword123}
-    networks:
-      - zefy-network
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine
@@ -38,96 +31,94 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-password123}
       - RABBITMQ_LOG_LEVEL=warning
-    networks:
-      - zefy-network
 
-  # API Gateway
-  user-service:
-    build:
-      context: .
-      dockerfile: services/user-service/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    ports:
-      - "3001:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/zefy_users
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
-      - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
-    networks:
-      - zefy-network
+# API Gateway
+# user-service:
+#   build:
+#     context: .
+#     dockerfile: services/user-service/Dockerfile
+#   restart: unless-stopped
+#   depends_on:
+#     - mongo
+#     - redis
+#     - rabbitmq
+#   ports:
+#     - "3001:3000"
+#   environment:
+#     - NODE_ENV=production
+#     - PORT=3000
+#     - MONGO_URI=mongodb://mongo:27017/zefy_users
+#     - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
+#     - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
+#   networks:
+#     - zefy-network
 
-  # Booking Service
-  booking-service:
-    build:
-      context: .
-      dockerfile: services/booking-service/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    ports:
-      - "3002:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/zefy_bookings
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
-      - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
-      - USER_SERVICE_URL=http://user-service:3000
-      - PARTNER_SERVICE_URL=http://partner-service:3000
-    networks:
-      - zefy-network
+# # Booking Service
+# booking-service:
+#   build:
+#     context: .
+#     dockerfile: services/booking-service/Dockerfile
+#   restart: unless-stopped
+#   depends_on:
+#     - mongo
+#     - redis
+#     - rabbitmq
+#   ports:
+#     - "3002:3000"
+#   environment:
+#     - NODE_ENV=production
+#     - PORT=3000
+#     - MONGO_URI=mongodb://mongo:27017/zefy_bookings
+#     - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
+#     - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
+#     - USER_SERVICE_URL=http://user-service:3000
+#     - PARTNER_SERVICE_URL=http://partner-service:3000
+#   networks:
+#     - zefy-network
 
-  # Partner Service
-  partner-service:
-    build:
-      context: .
-      dockerfile: services/partner-service/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    ports:
-      - "3003:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - MONGO_URI=mongodb://mongo:27017/zefy_partners
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
-      - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
-      - BOOKING_SERVICE_URL=http://booking-service:3000
-    networks:
-      - zefy-network
+# # Partner Service
+# partner-service:
+#   build:
+#     context: .
+#     dockerfile: services/partner-service/Dockerfile
+#   restart: unless-stopped
+#   depends_on:
+#     - mongo
+#     - redis
+#     - rabbitmq
+#   ports:
+#     - "3003:3000"
+#   environment:
+#     - NODE_ENV=production
+#     - PORT=3000
+#     - MONGO_URI=mongodb://mongo:27017/zefy_partners
+#     - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
+#     - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
+#     - BOOKING_SERVICE_URL=http://booking-service:3000
+#   networks:
+#     - zefy-network
 
-  gateway:
-    build:
-      context: .
-      dockerfile: services/gateway/Dockerfile
-    restart: unless-stopped
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - USER_SERVICE_URL=http://user-service:3000
-      - BOOKING_SERVICE_URL=http://booking-service:3000
-      - PARTNER_SERVICE_URL=http://partner-service:3000
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
-      - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
-    networks:
-      - zefy-network
+# gateway:
+#   build:
+#     context: .
+#     dockerfile: services/gateway/Dockerfile
+#   restart: unless-stopped
+#   depends_on:
+#     - mongo
+#     - redis
+#     - rabbitmq
+#   ports:
+#     - "3000:3000"
+#   environment:
+#     - NODE_ENV=production
+#     - PORT=3000
+#     - USER_SERVICE_URL=http://user-service:3000
+#     - BOOKING_SERVICE_URL=http://booking-service:3000
+#     - PARTNER_SERVICE_URL=http://partner-service:3000
+#     - REDIS_URL=redis://:${REDIS_PASSWORD:-defaultpassword123}@redis:6379
+#     - AMQP_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASSWORD:-password123}@rabbitmq:5672
+#   networks:
+#     - zefy-network
 
 volumes:
   mongo-data:
@@ -137,6 +128,4 @@ volumes:
   rabbitmq-data:
     driver: local
 
-networks:
-  zefy-network:
-    driver: bridge
+# s

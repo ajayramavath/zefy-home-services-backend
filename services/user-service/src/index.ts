@@ -11,7 +11,7 @@ import { EventConsumer } from '@zf/common';
 import { handleHubAssigned, setupEventHandlers } from './events/handlers';
 import { EVENT_TYPES, QUEUES } from '@zf/common';
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const app = Fastify({
   logger: {
     level: 'info',
@@ -52,8 +52,8 @@ const start = async () => {
     app.register(userRoutes, { prefix: "/users" });
     app.get("/users/health", async () => ({ status: "ok", service: "user-service" }));
 
-    await app.listen({ port: PORT, host: '0.0.0.0' });
-    app.log.info(`User Service running on http://0.0.0.0:${PORT}`);
+    await app.listen({ port: PORT });
+    app.log.info(`User Service running on http://localhost:${PORT}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
