@@ -2167,6 +2167,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/uuid@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "@types/uuid@npm:10.0.0"
+  checksum: 10c0/9a1404bf287164481cb9b97f6bb638f78f955be57c40c6513b7655160beb29df6f84c915aaf4089a1559c216557dc4d2f79b48d978742d3ae10b937420ddac60
+  languageName: node
+  linkType: hard
+
 "@types/uuid@npm:^9.0.1":
   version: 9.0.8
   resolution: "@types/uuid@npm:9.0.8"
@@ -2207,6 +2214,7 @@ __metadata:
     "@types/amqplib": "npm:^0.10.7"
     "@types/node": "npm:^22.14.1"
     "@types/redis": "npm:^4.0.11"
+    "@types/uuid": "npm:^10.0.0"
     "@zf/common": "workspace:*"
     "@zf/types": "workspace:*"
     amqplib: "npm:^0.10.7"
@@ -2217,6 +2225,7 @@ __metadata:
     redis: "npm:^4.7.0"
     ts-node-dev: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    uuid: "npm:^11.1.0"
   languageName: unknown
   linkType: soft
 
@@ -5244,7 +5253,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:^11.0.2":
+"uuid@npm:^11.0.2, uuid@npm:^11.1.0":
   version: 11.1.0
   resolution: "uuid@npm:11.1.0"
   bin:

@@ -1,6 +1,5 @@
 import { Schema, mongoose } from '@zf/common';
 import { IService, IServiceVersion } from '@zf/types';
-import { customAlphabet } from 'nanoid';
 
 
 const serviceVersion = new Schema<IServiceVersion>({

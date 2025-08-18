@@ -1,7 +1,5 @@
 import { Schema, mongoose } from '@zf/common';
-import { customAlphabet } from 'nanoid';
-
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
+import { v4 as uuidv4 } from 'uuid';
 
 interface IHubService {
   hubServiceId: string;
@@ -18,7 +16,7 @@ const hubServiceSchema = new Schema<IHubService>(
     hubServiceId: {
       type: String,
       unique: true,
-      default: () => `HSV${nanoid(6)}`,
+      default: () => `HSV${uuidv4()}`,
     },
     hubId: {
       type: String,

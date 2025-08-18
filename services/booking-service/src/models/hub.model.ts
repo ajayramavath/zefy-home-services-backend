@@ -1,15 +1,14 @@
 import { Schema, mongoose } from '@zf/common';
 import { IHub } from '@zf/types';
-import { customAlphabet } from 'nanoid';
+import { v4 as uuidv4 } from 'uuid';
 
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
 
 const hubSchema = new Schema<IHub>(
   {
     hubId: {
       type: String,
       unique: true,
-      default: () => `HUB${nanoid()}`,
+      default: () => `HUB${uuidv4()}`,
     },
     name: {
       type: String,
