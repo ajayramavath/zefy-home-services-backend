@@ -9,7 +9,7 @@ declare module "fastify" {
     /**
      * Creates a session for the given userId and returns the session token (ID).
      */
-    createSession(userId: string): Promise<string>;
+    createSession(userId: string, role: string): Promise<string>;
     /**
      * Revokes a single session by its sessionId.
      */
@@ -17,14 +17,14 @@ declare module "fastify" {
     /**
      * Revokes all sessions for the given userId.
      */
-    revokeAllSessions(userId: string): Promise<void>;
+    revokeAllSessions(userId: string, role: string): Promise<void>;
   }
 
   interface FastifyRequest {
     /**
      * The validated session attached after preHandler
      */
-    session: { userId: string; sessionId: string };
+    session: { userId: string; sessionId: string, role: string };
   }
 }
 
@@ -44,43 +44,49 @@ interface SessionOpts {
  * Redis-backed session plugin with multi-session control.
  */
 const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
-  // Revoke a single session token
+
   app.decorate("revokeSession", async (sessionId: string) => {
     await app.redis.del(`session:${sessionId}`);
   });
 
-  // Revoke all sessions for a given user
-  app.decorate("revokeAllSessions", async (userId: string) => {
+  app.decorate("revokeAllSessions", async (userId: string, role: string) => {
     for await (const key of app.redis.scanIterator({ MATCH: "session:*" })) {
-      const storedUserId = await app.redis.get(key);
-      if (storedUserId === userId) {
+      const data = await app.redis.get(key);
+      const { userId: storedUserId, role: storedRole } = JSON.parse(data);
+      if (storedUserId === userId && storedRole === role) {
         await app.redis.del(key);
       }
     }
   });
 
-  // Create (and optionally prune) sessions
-  app.decorate("createSession", async (userId: string) => {
-    // If multi-session not allowed, clear existing sessions
+  app.decorate("createSession", async (userId: string, role: string) => {
     if (opts.allowMultipleSessions === false) {
-      await app.revokeAllSessions(userId);
+      await app.revokeAllSessions(userId, role);
     }
     const sessionId = randomBytes(16).toString("hex");
-    await app.redis.set(`session:${sessionId}`, userId, {
+    await app.redis.set(`session:${sessionId}`, JSON.stringify({ userId, role }), {
       EX: opts.ttlSeconds,
     });
     return sessionId;
   });
 
-  // Validate session token on every request except auth routes
   app.addHook("preHandler", async (req, reply) => {
     if (
       req.url.startsWith("/users/auth") ||
       req.url.startsWith("/users/docs") ||
       req.url.startsWith("/users/health") ||
+      req.url.startsWith("/users/test-simple") ||
       req.url.startsWith("/health") ||
       req.url.startsWith("docs") ||
-      req.url.startsWith("/users/getData")
+      req.url.startsWith("/users/getData") ||
+      req.url.startsWith("/partners/health") ||
+      req.url.startsWith("/bookings/health") ||
+      req.url.startsWith("/partners/ws") ||
+      req.url.includes("/ws?") ||
+      req.url.startsWith("/partners/test-ws-direct") ||
+      req.headers.upgrade === 'websocket' ||
+      req.headers.connection?.toLowerCase().includes('upgrade')
+
     ) {
       return;
     }
@@ -91,14 +97,14 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
     }
 
     const sessionId = auth.slice(7);
-    const userId = await app.redis.get(`session:${sessionId}`);
+    console.log("sessionId----->", sessionId);
+    console.log("session data----->", JSON.parse(await app.redis.get(`session:${sessionId}`)));
+    const { userId, role } = JSON.parse(await app.redis.get(`session:${sessionId}`));
     console.log("userId----->", userId);
     if (!userId) {
       return reply.status(401).send({ error: "Invalid or expired session" });
     }
-
-    // Attach session info for downstream handlers
-    req.session = { userId, sessionId };
+    req.session = { userId, sessionId, role };
   });
 };
 

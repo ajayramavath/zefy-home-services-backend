@@ -1,14 +1,16 @@
 export interface IPartner {
   _id?: string;
-  userId: string; // Reference to user collection
+  userId: string;
   personalInfo?: {
     fullName: string;
     dateOfBirth: Date;
     gender: 'male' | 'female' | 'other';
     profilePicture?: string;
     email?: string;
+    phoneNumber: string;
   };
   serviceIDs?: string[];
+  operationalHubId?: string;
   availabilityId?: string;
   bankDetails?: {
     accountHolderName: string;
@@ -22,8 +24,7 @@ export interface IPartner {
       number: string;
       verified: boolean;
       selfiePhoto: string;
-      idFrontPhoto: string;
-      idBackPhoto: string;
+      idPhoto: string;
     };
     backgroundCheck: {
       status: 'pending' | 'completed' | 'failed';

@@ -19,6 +19,6 @@ export interface IAvailability {
     completedJobs: string[]; // booking IDs
     scheduledJobs: string[]; // booking IDs
   },
-  serviceIDs: string[]; // Array of service IDs
+  serviceIDs: string[];
   operationalHubId: string;
 }

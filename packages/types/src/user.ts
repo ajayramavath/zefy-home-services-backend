@@ -4,10 +4,10 @@ export interface IUser {
   gender?: "male" | "female" | "other";
   dateOfBirth?: Date;
   email?: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   phoneNumberVerified: boolean;
   role: 'admin' | 'user' | 'partner';
-  hubId: string;
+  addressIds: string[];
 
   createdAt?: Date;
   updatedAt?: Date;

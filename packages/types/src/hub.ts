@@ -16,7 +16,6 @@ export interface IHub {
     type: 'Polygon';
     coordinates: number[][][]; // GeoJSON Polygon
   };
-  services: string[];
   partnerCount: number;
   managers: {
     name: string;
@@ -24,6 +23,9 @@ export interface IHub {
     email?: string;
   }[];
   isActive: boolean;
+  hubServices?: any[];
+  availableServices?: any[];
+
   createdAt?: Date;
   updatedAt?: Date;
 }

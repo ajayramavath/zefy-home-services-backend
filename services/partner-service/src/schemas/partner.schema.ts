@@ -14,12 +14,6 @@ const ErrorResponse = Type.Object({
 
 const SecurityBearerAuth = [{ bearerAuth: [] }];
 
-const DayAvailabilitySchema = Type.Object({
-  available: Type.Boolean(),
-  startTime: Type.Optional(Type.String({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$' })),
-  endTime: Type.Optional(Type.String({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$' }))
-});
-
 const PartnerStatus = Type.Union([
   Type.Literal('incomplete'),
   Type.Literal('pending_approval'),
@@ -37,25 +31,25 @@ const JobStatus = Type.Union([
 
 const Step1DataSchema = Type.Object({
   fullName: Type.String({ minLength: 2, maxLength: 100, pattern: '^[a-zA-Z\\s]+$' }),
-  dateOfBirth: Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
+  dateOfBirth: Type.String(),
   gender: Type.Union([Type.Literal('male'), Type.Literal('female'), Type.Literal('other')]),
-  profilePhoto: Type.Optional(Type.String())
+  profilePhoto: Type.Optional(Type.String()),
+  phoneNumber: Type.String({ pattern: '^[+]?[1-9]\\d{1,14}$' })
 });
 
 const Step2DataSchema = Type.Object({
-  services: Type.Array(Type.String(), { minItems: 1, uniqueItems: true })
+  services: Type.Array(Type.String(), { minItems: 1, uniqueItems: true }),
+  hubId: Type.String()
 });
 
 const Step3DataSchema = Type.Object({
-  availability: Type.Object({
-    monday: DayAvailabilitySchema,
-    tuesday: DayAvailabilitySchema,
-    wednesday: DayAvailabilitySchema,
-    thursday: DayAvailabilitySchema,
-    friday: DayAvailabilitySchema,
-    saturday: DayAvailabilitySchema,
-    sunday: DayAvailabilitySchema
-  })
+  availableDays: Type.Array(
+    Type.String({
+      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    })
+  ),
+  startTime: Type.String(),
+  endTime: Type.String()
 });
 
 const Step4DataSchema = Type.Object({
@@ -72,9 +66,15 @@ const Step4DataSchema = Type.Object({
   }))
 });
 
-// Route Schemas
+const Step5DataSchema = Type.Object({
+  type: Type.Union([Type.Literal('aadhaar'), Type.Literal('pan'), Type.Literal('driving_license')]),
+  number: Type.String({ pattern: '^[2-9]{1}[0-9]{11}$' }),
+  selfiePhoto: Type.String(),
+  idFrontPhoto: Type.String(),
+  idBackPhoto: Type.String(),
+});
 
-// GET /status
+
 export const GetPartnerStatusSchema = {
   description: 'Get partner onboarding status',
   tags: ['Partners'],
@@ -94,15 +94,34 @@ export const GetPartnerStatusSchema = {
   }
 };
 
-// POST /onboarding/step
+const UpdateOnboardingStepBody = Type.Union([
+  Type.Object({
+    step: Type.Literal(1),
+    data: Step1DataSchema
+  }),
+  Type.Object({
+    step: Type.Literal(2),
+    data: Step2DataSchema
+  }),
+  Type.Object({
+    step: Type.Literal(3),
+    data: Step3DataSchema
+  }),
+  Type.Object({
+    step: Type.Literal(4),
+    data: Step4DataSchema
+  }),
+  Type.Object({
+    step: Type.Literal(5),
+    data: Step5DataSchema
+  })
+]);
+
 export const UpdateOnboardingStepSchema = {
   description: 'Update partner onboarding step',
   tags: ['Partners'],
   security: SecurityBearerAuth,
-  body: Type.Object({
-    step: Type.Number({ minimum: 1, maximum: 4 }),
-    data: Type.Union([Step1DataSchema, Step2DataSchema, Step3DataSchema, Step4DataSchema])
-  }),
+  body: UpdateOnboardingStepBody,
   response: {
     200: Type.Object({
       success: Type.Boolean(),
@@ -118,7 +137,6 @@ export const UpdateOnboardingStepSchema = {
   }
 };
 
-// GET /profile
 export const GetPartnerProfileSchema = {
   description: 'Get complete partner profile',
   tags: ['Partners'],
@@ -126,7 +144,7 @@ export const GetPartnerProfileSchema = {
   response: {
     200: Type.Object({
       success: Type.Boolean(),
-      data: Type.Any() // Partner object with dynamic fields based on completion
+      data: Type.Any()
     }),
     404: ErrorResponse,
     401: ErrorResponse
@@ -219,6 +237,7 @@ export type Step1Data = Static<typeof Step1DataSchema>;
 export type Step2Data = Static<typeof Step2DataSchema>;
 export type Step3Data = Static<typeof Step3DataSchema>;
 export type Step4Data = Static<typeof Step4DataSchema>;
+export type Step5Data = Static<typeof Step5DataSchema>;
 export type UpdateAvailabilityBody = Static<typeof UpdateAvailabilitySchema.body>;
 export type UpdateJobStatusBody = Static<typeof UpdateJobStatusSchema.body>;
 export type UpdateJobStatusParams = Static<typeof UpdateJobStatusSchema.params>;

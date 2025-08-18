@@ -6,3 +6,4 @@ export * from "./hub";
 export * from "./service";
 export * from "./availability";
 export * from "./partnerStats";
+export * from "./address";

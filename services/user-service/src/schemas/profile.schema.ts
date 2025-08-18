@@ -1,109 +1,61 @@
-import { FastifySchema } from "fastify";
+import { Type, Static } from '@sinclair/typebox';
 
-const locationProps = {
-  name: { type: "string" },
-  lat: { type: "number" },
-  lon: { type: "number" },
-};
+const SuccessResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+  data: Type.Optional(Type.Any())
+});
 
-const favoriteLocationsSchema = {
-  type: "object",
-  properties: {
-    home: {
-      type: ["object", "null"],
-      properties: locationProps,
-      required: ["name", "lat", "lon"],
-    },
-    work: {
-      type: ["object", "null"],
-      properties: locationProps,
-      required: ["name", "lat", "lon"],
-    },
-    other: {
-      type: ["object", "null"],
-      properties: locationProps,
-      required: ["name", "lat", "lon"],
-    },
-  },
-};
+const ErrorResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+  errors: Type.Optional(Type.Array(Type.String()))
+});
 
-export const updateProfileSchema: FastifySchema = {
-  description: "Update any subset of the user’s profile fields",
-  tags: ["Users"],
-  body: {
-    type: "object",
-    minProperties: 1,
-    additionalProperties: false,
-    properties: {
-      firstName: { type: "string" },
-      middleName: { type: "string" },
-      lastName: { type: "string" },
-      dateOfBirth: { type: "string", format: "date" },
-      gender: { type: "string", enum: ["male", "female", "other"] as string[] },
-    },
-  },
+export const UpdateProfileSchema = {
+  description: 'Update user profile',
+  tags: ['Profile'],
+  body: Type.Object({
+    fullName: Type.Optional(Type.String()),
+    dateOfBirth: Type.Optional(Type.String()),
+    gender: Type.Optional(Type.Union([Type.Literal('male'), Type.Literal('female'), Type.Literal('other')])),
+  }),
   response: {
-    200: {
-      description: "Full updated profile with favorites",
-      type: "object",
-      properties: {
-        firstName: { type: "string", nullable: true },
-        middleName: { type: "string", nullable: true },
-        lastName: { type: "string", nullable: true },
-        dateOfBirth: { type: "string", format: "date", nullable: true },
-        gender: {
-          type: "string",
-          enum: ["male", "female", "other"],
-          nullable: true,
-        },
-        email: { type: "string", nullable: true },
-        phoneNumber: { type: "string", nullable: true },
-        favoriteLocations: favoriteLocationsSchema,
-      },
-      required: ["favoriteLocations"],
-    },
-    400: {
-      description: "Validation error",
-      type: "object",
-      properties: { error: { type: "string" } },
-      required: ["error"],
-    },
-    404: {
-      description: "User not found",
-      type: "object",
-      properties: { error: { type: "string" } },
-      required: ["error"],
-    },
-  },
-};
+    201: Type.Object({
+      success: Type.Boolean(),
+      message: Type.String(),
+    }),
+    400: ErrorResponse,
+    500: ErrorResponse
+  }
+}
 
-export const getProfileSchema: FastifySchema = {
-  description: "Retrieve the current user’s full profile with favorites",
-  tags: ["Users"],
+export const SaveAddressSchema = {
+  description: 'Save address',
+  tags: ['Profile'],
+  body: Type.Object({
+    hubId: Type.String(),
+    googleMapsShortAddress: Type.String(),
+    googleMapsLongAddress: Type.String(),
+    houseNumber: Type.String(),
+    road: Type.String(),
+    landmark: Type.Optional(Type.String()),
+    latitude: Type.Number(),
+    longitude: Type.Number(),
+    houseDetails: Type.Object({
+      bedrooms: Type.Number(),
+      bathrooms: Type.Number(),
+      balconies: Type.Number(),
+    }),
+    contactPhone: Type.String(),
+    contactName: Type.String(),
+  }),
   response: {
-    200: {
-      description: "User profile payload",
-      type: "object",
-      properties: {
-        firstName: { type: "string", nullable: true },
-        middleName: { type: "string", nullable: true },
-        lastName: { type: "string", nullable: true },
-        dateOfBirth: { type: "string", format: "date", nullable: true },
-        gender: {
-          type: "string",
-          enum: ["male", "female", "other"],
-          nullable: true,
-        },
-        email: { type: "string", nullable: true },
-        phoneNumber: { type: "string", nullable: true },
-        favoriteLocations: favoriteLocationsSchema,
-      },
-    },
-    404: {
-      description: "User not found",
-      type: "object",
-      properties: { error: { type: "string" } },
-      required: ["error"],
-    },
-  },
-};
+    200: SuccessResponse,
+    400: ErrorResponse,
+    500: ErrorResponse
+  }
+}
+
+export type UpdateProfileBody = Static<typeof UpdateProfileSchema.body>;
+export type SaveAddressBody = Static<typeof SaveAddressSchema.body>;

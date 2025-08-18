@@ -6,7 +6,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "dev": "tsc --watch",
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist && rm -rf node_modules"
   },
   "exports": {
     ".": {

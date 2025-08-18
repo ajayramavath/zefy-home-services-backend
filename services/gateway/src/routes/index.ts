@@ -16,9 +16,9 @@ export default async function routes(app: FastifyInstance) {
     prefix: "/partners",
     rewritePrefix: "/partners",
     http2: false,
+    websocket: true,
   });
 
-  // Proxy /bookings/* to the booking-service
   app.register(proxy, {
     upstream: process.env.BOOKING_SERVICE_URL || "http://booking-service:3000",
     prefix: "/bookings",

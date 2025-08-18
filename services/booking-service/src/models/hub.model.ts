@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, mongoose } from '@zf/common';
 import { IHub } from '@zf/types';
 import { customAlphabet } from 'nanoid';
 
@@ -54,10 +54,6 @@ const hubSchema = new Schema<IHub>(
         required: true,
       },
     },
-    services: [{
-      type: String,
-      ref: 'Service',
-    }],
     partnerCount: {
       type: Number,
       default: 0,
@@ -86,10 +82,20 @@ const hubSchema = new Schema<IHub>(
 hubSchema.index({ serviceArea: '2dsphere' });
 hubSchema.index({ 'address.coordinates': '2dsphere' });
 
-hubSchema.virtual('services', {
+hubSchema.virtual('hubServices', {
   ref: 'HubService',
   localField: 'hubId',
   foreignField: 'hubId',
 });
 
-export const Hub = model<IHub>('Hub', hubSchema);
+hubSchema.virtual('availableServices', {
+  ref: 'HubService',
+  localField: 'hubId',
+  foreignField: 'hubId',
+  match: { isActive: true }
+});
+
+hubSchema.set('toJSON', { virtuals: true });
+hubSchema.set('toObject', { virtuals: true });
+
+export const Hub = mongoose.model<IHub>('Hub', hubSchema);

@@ -1,6 +1,4 @@
 import Fastify from "fastify";
-import swagger from "@fastify/swagger";
-import swaggerUI from "@fastify/swagger-ui";
 import "dotenv/config";
 import {
   mongoosePlugin,
@@ -9,49 +7,53 @@ import {
   sessionPlugin,
 } from "@zf/common";
 import userRoutes from "./routes/user.routes";
+import { EventConsumer } from '@zf/common';
+import { handleHubAssigned, setupEventHandlers } from './events/handlers';
+import { EVENT_TYPES, QUEUES } from '@zf/common';
 
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
-const app = Fastify({ logger: true });
-
-// Register plugins
-app.register(mongoosePlugin, { uri: process.env.MONGO_URI! });
-app.register(redisPlugin, { url: process.env.REDIS_URL! });
-app.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
-app.register(sessionPlugin, {
-  // e.g. 7 days
-  ttlSeconds: 180 * 24 * 3600,
-  allowMultipleSessions: false,
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
+const app = Fastify({
+  logger: {
+    level: 'info',
+  }
 });
-
-app.register(swagger, {
-  openapi: {
-    info: {
-      title: "Zefy Backend API",
-      description: "Gateway + aggregation endpoints",
-      version: "1.0.0",
-    },
-    servers: [{ url: "/", description: "Local dev" }],
-  },
-});
-
-app.register(swaggerUI, {
-  routePrefix: "/users/docs",
-  uiConfig: {
-    docExpansion: "none",
-    deepLinking: false,
-    url: "http://34.93.7.140",
-  },
-  staticCSP: true,
-  transformStaticCSP: (header) => header,
-});
-
-app.register(userRoutes, { prefix: "/users" });
-app.get("/users/health", async () => ({ status: "ok", service: "user-service" }));
 
 const start = async () => {
   try {
-    await app.listen({ port: PORT, host: "0.0.0.0" });
-    app.log.info(`🚀 user-service running on port ${PORT}`);
+    await app.register(mongoosePlugin, {
+      uri: process.env.MONGO_URI || 'mongodb://localhost:27017/zefy_users',
+      retries: 5
+    });
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    if (!app.mongooseReady()) {
+      throw new Error('MongoDB not ready after connection attempt');
+    }
+    app.log.info(`✅ MongoDB ready. State: ${app.mongooseState()}`);
+
+
+    await app.register(redisPlugin, { url: process.env.REDIS_URL! });
+    await app.register(rabbitmqPlugin, { url: process.env.AMQP_URL! });
+
+    await app.register(sessionPlugin, {
+      ttlSeconds: 180 * 24 * 3600,
+      allowMultipleSessions: false,
+    });
+
+    const eventConsumer = new EventConsumer(app);
+    eventConsumer.on(EVENT_TYPES.HUB_ASSIGNED, handleHubAssigned);
+    app.log.info('User service event handlers are configured!');
+
+    await eventConsumer.startConsuming(QUEUES.USER_EVENTS, [
+      'hub.assigned',
+      'user.*'
+    ]);
+
+    app.register(userRoutes, { prefix: "/users" });
+    app.get("/users/health", async () => ({ status: "ok", service: "user-service" }));
+
+    await app.listen({ port: PORT, host: '0.0.0.0' });
+    app.log.info(`User Service running on http://0.0.0.0:${PORT}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

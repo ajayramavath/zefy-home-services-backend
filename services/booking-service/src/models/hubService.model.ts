@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, mongoose } from '@zf/common';
 import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
@@ -46,4 +46,4 @@ const hubServiceSchema = new Schema<IHubService>(
 
 hubServiceSchema.index({ hubId: 1, serviceId: 1 }, { unique: true });
 
-export const HubService = model<IHubService>('HubService', hubServiceSchema);
+export const HubService = mongoose.model<IHubService>('HubService', hubServiceSchema);

@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, mongoose } from '@zf/common';
 import { IPartner } from '@zf/types';
 
 const partnerSchema = new Schema<IPartner>(
@@ -7,10 +7,8 @@ const partnerSchema = new Schema<IPartner>(
       type: String,
       required: true,
       unique: true,
-      ref: 'User',
     },
 
-    // Personal info
     personalInfo: {
       type: {
         fullName: {
@@ -28,6 +26,7 @@ const partnerSchema = new Schema<IPartner>(
           required: true,
         },
         profilePicture: String,
+        phoneNumber: String,
       },
       required: function () { return this.completionStep >= 1; }
     },
@@ -42,6 +41,10 @@ const partnerSchema = new Schema<IPartner>(
         },
         message: 'At least one service must be selected'
       }
+    },
+    operationalHubId: {
+      type: String,
+      required: function () { return this.completionStep >= 2; }
     },
 
 
@@ -100,7 +103,7 @@ const partnerSchema = new Schema<IPartner>(
           completedAt: Date,
         }
       },
-      required: function () { return this.completionStep >= 4; }
+      required: function () { return this.completionStep >= 5; }
     },
     status: {
       type: String,
@@ -111,7 +114,7 @@ const partnerSchema = new Schema<IPartner>(
       type: Number,
       default: 0,
       min: 0,
-      max: 4,
+      max: 5,
     },
     approvedAt: Date,
     training: {
@@ -153,10 +156,6 @@ const partnerSchema = new Schema<IPartner>(
   }
 );
 
-partnerSchema.index({ userId: 1 }, { unique: true });
-partnerSchema.index({ status: 1 });
-partnerSchema.index({ completionStep: 1 });
-
 partnerSchema.methods.isStepComplete = function (step: number): boolean {
   return this.completionStep >= step;
 };
@@ -169,17 +168,17 @@ partnerSchema.methods.markStepComplete = function (step: number) {
   if (step > this.completionStep) {
     this.completionStep = step;
 
-    if (step === 4) {
+    if (step === 5) {
       this.status = 'pending_approval';
     }
   }
 };
 
 partnerSchema.pre('save', function (next) {
-  if (this.completionStep === 4 && this.status === 'incomplete') {
+  if (this.completionStep === 5 && this.status === 'incomplete') {
     this.status = 'pending_approval';
   }
   next();
 });
 
-export const Partner = model<IPartner>('Partner', partnerSchema);
+export const Partner = mongoose.model<IPartner>('Partner', partnerSchema);

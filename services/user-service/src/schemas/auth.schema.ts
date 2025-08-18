@@ -1,130 +1,94 @@
-// services/user-service/src/schemas/auth.schema.ts
-import { FastifySchema } from "fastify";
+import { Type, Static } from '@sinclair/typebox';
 
-export const googleSignInSchema: FastifySchema = {
-  description: "Sign in (or up) with a Google ID token and get a session",
-  tags: ["Auth"],
-  body: {
-    type: "object",
-    required: ["idToken"],
-    properties: {
-      idToken: { type: "string" },
-    },
-  },
+const SuccessResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+  data: Type.Optional(Type.Any())
+});
+
+const ErrorResponse = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+  errors: Type.Optional(Type.Array(Type.String()))
+});
+
+const PhoneNumberPattern = '^[6-9]\\d{9}$';
+
+const OtpPattern = '^\\d{6}$';
+
+export const SendOtpSchema = {
+  description: 'Send OTP to phone number',
+  tags: ['Authentication'],
+  body: Type.Object({
+    phoneNumber: Type.String({
+      pattern: PhoneNumberPattern,
+      description: '10-digit Indian mobile number starting with 6-9',
+      examples: ['9876543210']
+    }),
+    role: Type.Union([
+      Type.Literal('admin'),
+      Type.Literal('user'),
+      Type.Literal('partner')
+    ])
+  }),
   response: {
-    200: {
-      type: "object",
-      properties: {
-        user: {
-          type: "object",
-          properties: {
-            _id: { type: "string" },
-            providers: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  provider: { type: "string" },
-                  providerId: { type: "string" },
-                  email: { type: "string", nullable: true },
-                  displayName: { type: "string", nullable: true },
-                  photoURL: { type: "string", nullable: true },
-                  isVerified: { type: "boolean" },
-                  createdAt: { type: "string", format: "date-time" },
-                },
-                required: ["provider", "providerId", "isVerified", "createdAt"],
-              },
-            },
-            metadata: { type: "object" },
-            firstName: { type: "string", nullable: true },
-            middleName: { type: "string", nullable: true },
-            lastName: { type: "string", nullable: true },
-            dateOfBirth: { type: "string", format: "date", nullable: true },
-            gender: {
-              type: "string",
-              enum: ["male", "female", "other"],
-              nullable: true,
-            },
-            createdAt: { type: "string", format: "date-time" },
-            updatedAt: { type: "string", format: "date-time" },
-          },
-          required: ["_id", "providers", "createdAt", "updatedAt"],
-        },
-        sessionToken: { type: "string" },
-        expiresIn: { type: "integer" },
-      },
-      required: ["user", "sessionToken", "expiresIn"],
-    },
-    401: {
-      type: "object",
-      properties: { error: { type: "string" } },
-      required: ["error"],
-    },
-  },
+    200: Type.Object({
+      success: Type.Boolean(),
+      message: Type.String(),
+      data: Type.Object({
+        phoneNumber: Type.String(),
+        expiresIn: Type.Number({ description: 'OTP expiry time in seconds' }),
+      })
+    }),
+    400: ErrorResponse,
+    500: ErrorResponse
+  }
 };
 
-export const linkPhoneSchema: FastifySchema = {
-  description: "Link a verified phone (via Firebase) to the current user",
-  tags: ["Auth"],
-  // body: {
-  //   type: "object",
-  //   required: ["phoneIdToken"],
-  //   properties: {
-  //     phoneIdToken: { type: "string" },
-  //   },
-  // },
-  body: {
-    type: "object",
-    required: [
-      "uid",
-      "isEmailVerified",
-      "isAnonymous",
-      "metadata",
-      "providerData",
-    ],
-    properties: {
-      uid: { type: "string" },
-      displayName: { type: "string", nullable: true },
-      email: { type: "string", format: "email", nullable: true },
-      isEmailVerified: { type: "boolean" },
-      isAnonymous: { type: "boolean" },
-      metadata: {
-        type: "object",
-        required: ["creationTime", "lastSignInTime"],
-        properties: {
-          creationTime: { type: "string", format: "date-time" },
-          lastSignInTime: { type: "string", format: "date-time" },
-        },
-      },
-      phoneNumber: { type: ["string", "null"] },
-      photoURL: { type: "string", nullable: true },
-      providerData: {
-        type: "array",
-        items: {
-          type: "object",
-          required: ["providerId", "uid"],
-          properties: {
-            providerId: { type: "string" },
-            uid: { type: "string" },
-            email: { type: "string", format: "email", nullable: true },
-            phoneNumber: { type: ["string", "null"] },
-            photoURL: { type: "string", nullable: true },
-            displayName: { type: "string", nullable: true },
-          },
-        },
-      },
-    },
-  },
+export const VerifyOtpAndLoginSchema = {
+  description: 'Verify OTP and login user',
+  tags: ['Authentication'],
+  body: Type.Object({
+    phoneNumber: Type.String({
+      pattern: PhoneNumberPattern,
+      description: '10-digit Indian mobile number starting with 6-9',
+      examples: ['9876543210']
+    }),
+    otp: Type.String({
+      pattern: OtpPattern,
+      description: '6-digit OTP',
+      examples: ['000000']
+    }),
+    role: Type.Union([
+      Type.Literal('admin'),
+      Type.Literal('user'),
+      Type.Literal('partner')
+    ])
+  }),
   response: {
-    200: {
-      type: "object",
-      properties: { success: { type: "boolean" } },
-      required: ["success"],
-    },
-    401: {
-      type: "object",
-      properties: { error: { type: "string" } },
-      required: ["error"],
-    },
-  },
+    200: Type.Object({
+      success: Type.Boolean(),
+      message: Type.String(),
+      data: Type.Object({
+        isNewUser: Type.Boolean(),
+        sessionToken: Type.String({ description: 'Session token for authentication' }),
+        user: Type.Object({
+          id: Type.String(),
+          phoneNumber: Type.String(),
+          name: Type.String(),
+          gender: Type.Union([Type.Literal('male'), Type.Literal('female'), Type.Literal('other')]),
+          dateOfBirth: Type.String({ format: 'date-time' }),
+          addressIds: Type.Array(Type.String()),
+          createdAt: Type.String({ format: 'date-time' }),
+          updatedAt: Type.String({ format: 'date-time' }),
+          role: Type.String({ enum: ['admin', 'user', 'partner'] }),
+        })
+      })
+    }),
+    400: ErrorResponse,
+    500: ErrorResponse
+  }
 };
+
+export type SendOtpBody = Static<typeof SendOtpSchema.body>;
+export type VerifyOtpAndLoginBody = Static<typeof VerifyOtpAndLoginSchema.body>;

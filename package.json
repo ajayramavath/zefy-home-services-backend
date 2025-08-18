@@ -10,13 +10,27 @@
   ],
   "scripts": {
     "build": "yarn workspaces foreach -A run build",
-    "dev": "yarn workspaces foreach -A run dev",
     "lint": "yarn workspaces run lint",
-    "start": "yarn workspaces foreach -A run start"
+    "start": "yarn workspaces foreach -A run start",
+    "seed:services": "npx ts-node scripts/seed-services.ts",
+    "seed:hub": "npx ts-node scripts/seed-bengaluru-hub.ts",
+    "seed:all": "yarn run seed:services && yarn run seed:hub",
+    "dev:infra": "docker compose up mongo redis rabbitmq -d",
+    "stop:infra": "docker compose down",
+    "clean": "docker system prune -f && yarn workspaces foreach run clean",
+    "dev:user": "yarn workspace @zf/user-service dev",
+    "dev:gateway": "yarn workspace @zf/gateway dev",
+    "dev:partner": "yarn workspace @zf/partner-service dev",
+    "dev:booking": "yarn workspace @zf/booking-service dev",
+    "dev:services": "concurrently -n \"USER,GATEWAY,PARTNER,BOOKING\" -c \"blue,green,yellow,magenta\" \"yarn dev:user\" \"yarn dev:gateway\" \"yarn dev:partner\" \"yarn dev:booking\"",
+    "dev": "yarn dev:services"
   },
   "packageManager": "yarn@4.9.2",
   "devDependencies": {
-    "@types/node": "^24.0.10",
+    "@types/node": "^24.1.0",
+    "concurrently": "^9.2.0",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
 }

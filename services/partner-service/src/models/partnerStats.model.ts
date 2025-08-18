@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { mongoose, Schema } from "@zf/common";
 import { IPartnerStats } from "@zf/types";
 
 const partnerStatsSchema = new Schema<IPartnerStats>(
@@ -51,4 +51,4 @@ const partnerStatsSchema = new Schema<IPartnerStats>(
   }
 )
 
-const PartnerStats = model<IPartnerStats>('PartnerStats', partnerStatsSchema);
+export const PartnerStats = mongoose.model<IPartnerStats>('PartnerStats', partnerStatsSchema);

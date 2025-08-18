@@ -1,5 +1,5 @@
 import { IAvailability } from '@zf/types';
-import { model, Schema } from "mongoose";
+import { mongoose, Schema } from "@zf/common";
 
 const availabilitySchema = new Schema<IAvailability>(
   {
@@ -24,7 +24,6 @@ const availabilitySchema = new Schema<IAvailability>(
       },
       updatedAt: {
         type: Date,
-        required: true,
       }
     },
     workingSchedule: {
@@ -68,5 +67,5 @@ const availabilitySchema = new Schema<IAvailability>(
   }
 )
 
-export const Availability = model<IAvailability>('Availability', availabilitySchema);
+export const Availability = mongoose.model<IAvailability>('Availability', availabilitySchema);
 

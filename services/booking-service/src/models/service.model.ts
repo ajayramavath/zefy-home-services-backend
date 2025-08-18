@@ -1,15 +1,20 @@
-import { Schema, model } from 'mongoose';
-import { IService } from '@zf/types';
+import { Schema, mongoose } from '@zf/common';
+import { IService, IServiceVersion } from '@zf/types';
 import { customAlphabet } from 'nanoid';
 
-const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 8);
+
+const serviceVersion = new Schema<IServiceVersion>({
+  version: {
+    type: String,
+    required: true,
+  }
+});
 
 const serviceSchema = new Schema<IService>(
   {
     serviceId: {
       type: String,
       unique: true,
-      default: () => `SVC${nanoid(6)}`,
     },
     name: {
       type: String,
@@ -51,6 +56,11 @@ const serviceSchema = new Schema<IService>(
       type: Boolean,
       default: true,
       required: true,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: ['SWEEPING_MOPPING', 'KITCHEN_UTENSILS', 'CAR_CLEANING', 'LAUNDRY', 'BATHROOM', 'KITCHEN_PREP', 'DAILY_ESSENTIALS'],
     }
   },
   {
@@ -64,4 +74,5 @@ serviceSchema.virtual('hubs', {
   foreignField: 'serviceId',
 });
 
-export const Service = model<IService>('Service', serviceSchema);
+export const ServiceVersion = mongoose.model<IServiceVersion>('ServiceVersion', serviceVersion);
+export const Service = mongoose.model<IService>('Service', serviceSchema);
