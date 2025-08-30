@@ -14,7 +14,7 @@ export interface IPartnerStats {
     activeTime: number;
   }
 
-  curruntBookingId: string | null; // booking ID
+  curruntBookingId: string | null;
 
   createdAt?: Date;
   updatedAt?: Date;

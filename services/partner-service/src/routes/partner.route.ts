@@ -22,6 +22,8 @@ export async function partnerRoutes(fastify: FastifyInstance) {
 
   fastify.get('/uploads/presignedUrl', PartnerController.getPresignedUrl);
 
+  fastify.get('/dashboard', PartnerController.getDashboard);
+
   // // Get partner profile - GET /profile  
   // fastify.get('/profile', {
   //   schema: GetPartnerProfileSchema
@@ -115,4 +117,15 @@ export async function partnerRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  fastify.get('/available-partners', PartnerController.getAvailablePartners)
+
+  fastify.get('/getProfile', PartnerController.getProfile);
+
+  fastify.get('/availability/:partnerId', PartnerController.getAvailability);
+
+  fastify.get('/pending-approval', PartnerController.getUnverifiedPartners);
+
+  fastify.post('/verifyPartner/:partnerId', PartnerController.approvePartner);
+
 }

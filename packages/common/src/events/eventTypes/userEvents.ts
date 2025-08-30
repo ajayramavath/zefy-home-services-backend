@@ -7,3 +7,15 @@ export interface UserCreatedEvent {
   };
 }
 
+export interface UserPartnerArrivedEvent {
+  eventType: 'USER_PARTNER_ARRIVED';
+  data: UserPartnerArrivedData
+}
+
+export interface UserPartnerArrivedData {
+  userId: string;
+  partnerId: string;
+  bookingId: string;
+  timestamp: string;
+}
+

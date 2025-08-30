@@ -11,4 +11,10 @@ export async function bookingRoutes(fastify: FastifyInstance) {
   fastify.post("/bookings/:id/verifyOtp", BookingController.verifyOTP);
 
   fastify.get('/getUserBookings', BookingController.getUserBookings);
+
+  fastify.get('/partnerDashboard/:id', BookingController.getPartnerDashboardDetails);
+
+  fastify.get('/getUnassignedBookings', BookingController.getUnassignedBookings);
+
+  fastify.get('/getPartnerCurrentBooking/:id', BookingController.getPartnerCurrentBooking);
 }

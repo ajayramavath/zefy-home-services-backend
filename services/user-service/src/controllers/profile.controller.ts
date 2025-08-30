@@ -69,9 +69,10 @@ export class ProfileController {
       if (!doc) {
         return reply.status(404).send({ error: "User not found" });
       }
-      const { hubId, googleMapsShortAddress, googleMapsLongAddress, houseNumber, road, landmark, latitude, longitude, houseDetails, contactPhone, contactName } = req.body;
+      const { hubId, label, googleMapsShortAddress, googleMapsLongAddress, houseNumber, road, landmark, latitude, longitude, houseDetails, contactPhone, contactName } = req.body;
       const address = new Address({
         hubId,
+        label,
         googleMapsShortAddress,
         googleMapsLongAddress,
         house_number: houseNumber,
@@ -92,6 +93,7 @@ export class ProfileController {
         id: address._id.toString(),
         userId: address.userId.toString(),
         hubId: address.hubId,
+        label: address.label,
         googleMapsShortAddress: address.googleMapsShortAddress,
         googleMapsLongAddress: address.googleMapsLongAddress,
         houseNumber: address.house_number,
@@ -113,6 +115,65 @@ export class ProfileController {
       return reply.status(200).send({ success: true, message: "Address saved successfully", data: formattedAddresses });
     } catch (error) {
       req.server.log.error('Error saving address:', error);
+      req.server.log.error(error);
+      return reply.status(500).send({ error: "Failed to save address" });
+    }
+  }
+
+  static async getAddress(req: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = req.session.userId;
+      const addresses = await Address.find({ userId }).lean().exec();
+
+      const formatedAddresses = addresses.map((address) => {
+        return {
+          id: address._id.toString(),
+          userId: address.userId.toString(),
+          hubId: address.hubId,
+          label: address.label,
+          googleMapsShortAddress: address.googleMapsShortAddress,
+          googleMapsLongAddress: address.googleMapsLongAddress,
+          houseNumber: address.house_number,
+          road: address.road,
+          landmark: address.landmark || null,
+          latitude: address.lat,
+          longitude: address.lng,
+          houseDetails: {
+            bedrooms: address.bedrooms,
+            bathrooms: address.bathrooms,
+            balconies: address.balconies,
+          },
+          contactPhoneNumber: address.contact_phone_number,
+          contactName: address.contact_name,
+          createdAt: address.createdAt?.toISOString(),
+          updatedAt: address.updatedAt?.toISOString(),
+        }
+      });
+
+      return reply.status(200).send({ success: true, data: formatedAddresses });
+
+    } catch (error) {
+      req.server.log.error(error.toString());
+      req.server.log.error(error);
+      return reply.status(500).send({ error: "Failed to save address" });
+    }
+  }
+
+  static async deleteAddress(req: FastifyRequest<{ Params: { addressId: string } }>, reply: FastifyReply) {
+    try {
+      const userId = req.session.userId;
+      const addressId = req.params.addressId;
+      const doc = await Address.findById(addressId);
+      if (!doc) {
+        return reply.status(404).send({ error: "Address not found" });
+      }
+      if (doc.userId.toString() != userId) {
+        return reply.status(403).send({ error: "You are not authorized to delete this address" });
+      }
+      await Address.deleteOne({ _id: addressId });
+      return reply.status(200).send({ success: true, message: "Address deleted successfully" });
+    } catch (error) {
+      req.server.log.error(error.toString());
       req.server.log.error(error);
       return reply.status(500).send({ error: "Failed to save address" });
     }

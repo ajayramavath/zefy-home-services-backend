@@ -12,6 +12,10 @@ const AddressSchema = new Schema<IAddress>({
     required: true,
     ref: 'User',
   },
+  label: {
+    type: String,
+    required: true,
+  },
   lat: {
     type: Number,
     required: true,

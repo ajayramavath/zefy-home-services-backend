@@ -121,9 +121,9 @@ export class HubController {
     }
   }
 
-  static async getHubServices(request: FastifyRequest<{ Body: { hubId: string } }>, reply: FastifyReply) {
+  static async getHubServices(request: FastifyRequest<{ Params: { hubId: string } }>, reply: FastifyReply) {
     try {
-      const { hubId } = request.body;
+      const { hubId } = request.params;
       request.server.log.info(`Getting hub services for hubId: ${hubId}`);
 
       const hub = await Hub.findOne({ hubId });
@@ -142,11 +142,8 @@ export class HubController {
       const services = await Promise.all(hubServices.map(async hs => {
         const serviceId = hs.serviceId as String;
         const service = await Service.findOne({ serviceId });
-        request.server.log.info(`Hub service: ${service}`);
         return service;
       }))
-
-      request.server.log.info(`Hub services: ${services}`);
 
       return reply.status(200).send({
         success: true,

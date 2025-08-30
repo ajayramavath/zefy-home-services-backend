@@ -25,6 +25,8 @@ declare module "fastify" {
      * The validated session attached after preHandler
      */
     session: { userId: string; sessionId: string, role: string };
+    isAdmin: boolean;
+    authenticatedId: string;
   }
 }
 
@@ -81,6 +83,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("/users/getData") ||
       req.url.startsWith("/partners/health") ||
       req.url.startsWith("/bookings/health") ||
+      req.url.startsWith("/admin/health") ||
       req.url.startsWith("/partners/ws") ||
       req.url.includes("/ws?") ||
       req.url.startsWith("/partners/test-ws-direct") ||
@@ -90,6 +93,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
     ) {
       return;
     }
+    console.log("req.url----->", req.url);
 
     const auth = req.headers.authorization;
     if (!auth || !auth.startsWith("Bearer ")) {
@@ -98,13 +102,30 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
 
     const sessionId = auth.slice(7);
     console.log("sessionId----->", sessionId);
-    console.log("session data----->", JSON.parse(await app.redis.get(`session:${sessionId}`)));
+
+    const adminSessionData = await app.redis.get(`admin:session:${sessionId}`);
+    if (adminSessionData) {
+      const adminSession = JSON.parse(adminSessionData);
+      req.adminSession = {
+        adminId: adminSession.adminId,
+        sessionId,
+        role: adminSession.role
+      };
+      req.isAdmin = true;
+      req.authenticatedId = adminSession.adminId;
+
+      app.log.info(`Admin ${adminSession.adminId} (${adminSession.role}) accessing ${req.method} ${req.url}`);
+      return;
+    }
+
     const { userId, role } = JSON.parse(await app.redis.get(`session:${sessionId}`));
     console.log("userId----->", userId);
     if (!userId) {
       return reply.status(401).send({ error: "Invalid or expired session" });
     }
     req.session = { userId, sessionId, role };
+    req.isAdmin = false;
+    req.authenticatedId = userId;
   });
 };
 

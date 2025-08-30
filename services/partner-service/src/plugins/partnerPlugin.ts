@@ -6,8 +6,12 @@ const partnerPlugin: FastifyPluginAsync = async (fastify, opts) => {
   fastify.addHook('preHandler', async (request, reply) => {
     if (request.url.startsWith("/partners/ws") ||
       request.url.includes("/partners/status") ||
+      request.url.includes("/partners/health") ||
+      request.url.includes("/partners/available-partners") ||
       request.url.includes("/ws?") ||
       request.url.startsWith("/partners/test-ws-direct") ||
+      request.url.startsWith("/partners/pending-approval") ||
+      request.url.startsWith("/partners/verifyPartner") ||
       request.headers.upgrade === 'websocket' ||
       request.headers.connection?.toLowerCase().includes('upgrade')) {
       return;

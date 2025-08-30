@@ -13,14 +13,65 @@ import { IAvailability, IPartner } from "@zf/types";
 import { s3 } from "../index";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PartnerStats } from "../models/partnerStats.model";
 
 export class PartnerController {
+
+  static async getProfile(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { partner } = request;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found',
+        });
+      }
+      return reply.status(200).send({
+        success: true,
+        data: partner
+      });
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get partner profile'
+      });
+    }
+  }
+
+  static async getAvailability(request: FastifyRequest<{ Params: { partnerId: string } }>, reply: FastifyReply) {
+    try {
+      const { partnerId } = request.params;
+      const { partner } = request;
+      if (!partner || (partner._id).toString() !== partnerId) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found',
+        });
+      }
+      const availability = await Availability.findOne({ partnerId: partnerId });
+      if (!availability) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Availability not found',
+        });
+      }
+
+      return reply.status(200).send({
+        success: true,
+        data: availability
+      })
+    } catch (error) {
+
+    }
+  }
 
 
   static async createPartner(userId: string): Promise<IPartner> {
     try {
       const newPartner = new Partner({ userId });
       await newPartner.save();
+
       return newPartner
     } catch (error) {
       throw error
@@ -179,7 +230,8 @@ export class PartnerController {
               scheduledJobs: []
             },
             serviceIDs: partner.serviceIDs || [],
-            operationalHubId: partner.operationalHubId
+            operationalHubId: partner.operationalHubId,
+            currentBookingId: null
           }
           const availability = await Availability.create(availabilityData);
           partner.availabilityId = availability.id;
@@ -251,6 +303,158 @@ export class PartnerController {
       return reply.status(500).send({
         success: false,
         message: 'Failed to update onboarding step'
+      });
+    }
+  }
+
+  static async getDashboard(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { partner } = request;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found',
+        });
+      }
+
+      const availability = await Availability.findOne({ partnerId: partner._id });
+
+      if (!availability) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Availability not found',
+        });
+      }
+      return reply.status(200).send({
+        success: true,
+        data: {
+          completedJobs: availability.todayStats.completedJobs,
+        }
+      });
+
+    } catch (error) {
+
+    }
+  }
+
+  static async getAvailablePartners(request: FastifyRequest<{
+    Querystring: {
+      hubId: string;
+      lat: number;
+      lng: number;
+    }
+  }>, reply: FastifyReply) {
+    try {
+      const { adminId } = request.adminSession
+      if (!adminId) {
+        return reply.status(401).send({
+          success: false,
+          message: 'Unauthorized'
+        })
+      }
+      const { hubId, lat, lng } = request.query;
+
+      const partners = await Partner.find({
+        'operationalHubId': hubId,
+        'status': 'approved',
+      }).populate('availabilityId');
+
+      const availablePartners = partners.filter(async partner => {
+        const availability = await Availability.findOne({ partnerId: partner._id });
+        if (!availability) {
+          return false;
+        }
+        return availability.isOnline && availability.status === 'IDLE'
+      })
+
+      reply.status(200).send({
+        success: true,
+        data: {
+          availablePartners
+        }
+      })
+
+
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get partners'
+      });
+    }
+  }
+
+  static async getUnverifiedPartners(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { adminId } = request.adminSession;
+      if (!adminId) {
+        return reply.status(401).send({
+          success: false,
+          message: 'Unauthorized'
+        });
+      }
+      const partners = await Partner.find({
+        'status': 'pending_approval'
+      });
+
+      reply.status(200).send({
+        success: true,
+        data: {
+          partners
+        }
+      });
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get partners'
+      });
+    }
+  }
+
+  static async approvePartner(request: FastifyRequest<{ Params: { partnerId: string }, Querystring: { verify: boolean } }>, reply: FastifyReply) {
+    try {
+
+      const { adminId } = request.adminSession;
+      if (!adminId) {
+        return reply.status(401).send({
+          success: false,
+          message: 'Unauthorized'
+        });
+      }
+      const partner = await Partner.findOne({ _id: request.params.partnerId });
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+
+      if (partner.status !== 'pending_approval') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Partner is not in pending approval status'
+        });
+      }
+
+      if (request.query.verify) {
+        partner.status = 'approved';
+        partner.approvedAt = new Date();
+      } else {
+        partner.status = 'rejected';
+      }
+      await partner.save();
+
+      return reply.status(200).send({
+        success: true,
+        message: 'Partner approved successfully',
+      });
+
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to approve'
       });
     }
   }

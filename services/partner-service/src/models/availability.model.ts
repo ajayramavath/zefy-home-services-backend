@@ -60,6 +60,10 @@ const availabilitySchema = new Schema<IAvailability>(
     operationalHubId: {
       type: String,
       required: true
+    },
+    currentBookingId: {
+      type: String,
+      default: "jdhbkhjsbe"
     }
   },
   {

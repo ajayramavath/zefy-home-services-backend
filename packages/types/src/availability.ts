@@ -16,9 +16,10 @@ export interface IAvailability {
     unavailableDates?: Date[];
   },
   todayStats: {
-    completedJobs: string[]; // booking IDs
-    scheduledJobs: string[]; // booking IDs
+    completedJobs: string[];
+    scheduledJobs: string[];
   },
+  currentBookingId: string | null;
   serviceIDs: string[];
   operationalHubId: string;
 }

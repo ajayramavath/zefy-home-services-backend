@@ -12,4 +12,6 @@ export default async function userRoutes(app: FastifyInstance) {
   app.get("/profile", ProfileController.getProfile);
   app.put("/updateProfile", ProfileController.updateProfile);
   app.post("/saveAddress", ProfileController.saveAddress);
+  app.get("/addresses", ProfileController.getAddress);
+  app.post("/deleteAddress/:addressId", ProfileController.deleteAddress);
 }

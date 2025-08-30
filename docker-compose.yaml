@@ -17,7 +17,7 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --loglevel warning --requirepass ${REDIS_PASSWORD:-defaultpassword123}
+    command: redis-server --appendonly yes --loglevel warning
 
   rabbitmq:
     image: rabbitmq:3.12-management-alpine

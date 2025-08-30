@@ -55,9 +55,9 @@ const bookingSchema = new Schema<IBooking>({
 
   hubId: {
     type: String,
-    ref: 'Hub',
-    required: true,
-    index: true
+    // ref: 'Hub',
+    // required: true,
+    // index: true
   },
 
   amount: {
@@ -78,6 +78,13 @@ const bookingSchema = new Schema<IBooking>({
     enum: ['pending', 'baseAmountPaid', 'fullAmountPaid', 'refunded'],
     default: 'pending',
     index: true
+  },
+
+  payment: {
+    baseAmountPaid: { type: Boolean, default: false },
+    fullAmountPaid: { type: Boolean, default: false },
+    baseAmountPaymentId: { type: String },
+    fullAmountPaymentId: { type: String },
   },
 
   partnerStatus: {

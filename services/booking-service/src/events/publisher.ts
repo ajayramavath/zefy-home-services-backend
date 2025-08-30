@@ -1,9 +1,9 @@
-import { EventPublisher } from "@zf/common";
+import { BookingPartnerLocationUpdatedEvent, EventPublisher } from "@zf/common";
 import {
   BookingCreatedEvent,
   BookingStatusUpdatedEvent,
   BookingReadyForAssignmentEvent,
-  PartnerAssignedEvent,
+  BookingPartnerAssignedEvent,
   ServiceStartedEvent,
   ServiceCompletedEvent,
   BookingCancelledEvent,
@@ -61,7 +61,7 @@ export class BookingsEventPublisher extends EventPublisher {
     this.fastify.log.info(`Published booking created event: ${booking._id}`);
   }
 
-  async publishBookingReadyForAssignment(booking: IBooking, services: IService[]): Promise<void> {
+  async publishBookingReadyForAssignment(booking: IBooking, services: IService[], supervisorIds: string[]): Promise<void> {
     const serviceDetails = services.map(service => ({
       serviceId: service.serviceId,
       serviceName: service.name,
@@ -72,6 +72,7 @@ export class BookingsEventPublisher extends EventPublisher {
       eventType: 'BOOKING_READY_FOR_ASSIGNMENT',
       data: {
         bookingId: booking._id,
+        supervisorIds,
         hubId: booking.hubId,
         userId: booking.user.id,
         serviceDetails: serviceDetails,
@@ -129,14 +130,33 @@ export class BookingsEventPublisher extends EventPublisher {
     // - other states: no polling needed
   }
 
-  async publishPartnerAssigned(booking: IBooking): Promise<void> {
-    const event: PartnerAssignedEvent = {
-      eventType: 'PARTNER_ASSIGNED',
+  async publishBookingPartnerLocationUpdated(booking: IBooking, partnerId: string, location: { latitude: number; longitude: number }): Promise<void> {
+    const event: BookingPartnerLocationUpdatedEvent = {
+      eventType: 'BOOKING_PARTNER_LOCATION_UPDATED',
+      data: {
+        bookingId: booking._id,
+        userId: booking.user.id,
+        partnerId,
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude
+        }
+      }
+    }
+    this.fastify.log.info(`Published booking partner location updated event: ${booking._id} → ${booking.partner!.id}`);
+    await this.publish(event, 'booking.partner.location.updated');
+  }
+
+  async publishPartnerAssigned(booking: IBooking, partnerUserId: string): Promise<void> {
+    const event: BookingPartnerAssignedEvent = {
+      eventType: 'BOOKING_PARTNER_ASSIGNED',
       data: {
         bookingId: booking._id,
         userId: booking.user.id,
         partnerId: booking.partner!.id,
+        partnerUserId,
         partnerDetails: {
+          id: booking.partner.id,
           name: booking.partner!.name,
           phoneNumber: booking.partner!.phoneNumber,
           photoUrl: booking.partner!.photoUrl,
@@ -154,7 +174,7 @@ export class BookingsEventPublisher extends EventPublisher {
       }
     };
 
-    await this.publish(event, 'partner.assigned');
+    await this.publish(event, 'booking.partner.assigned');
     this.fastify.log.info(`Published partner assigned event: ${booking._id} → ${booking.partner!.id}`);
 
     // Note: Client apps will detect partner assignment via HTTP polling
@@ -181,10 +201,6 @@ export class BookingsEventPublisher extends EventPublisher {
 
     await this.publish(event, 'service.started');
     this.fastify.log.info(`Published service started event: ${booking._id}`);
-
-    // Note: Client apps will detect service start via HTTP polling
-    // User app will change polling interval to 60 seconds when status becomes 'ongoing'
-    // Partner app continues normal polling for status updates
   }
 
   async publishServiceCompleted(booking: IBooking): Promise<void> {
@@ -209,10 +225,6 @@ export class BookingsEventPublisher extends EventPublisher {
 
     await this.publish(event, 'service.completed');
     this.fastify.log.info(`Published service completed event: ${booking._id}`);
-
-    // Note: Client apps will detect service completion via HTTP polling
-    // Both user and partner apps will stop polling when status becomes 'completed'
-    // User app will show completion screen and prompt for review
   }
 
   async publishBookingCancelled(booking: IBooking): Promise<void> {

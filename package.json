@@ -22,7 +22,8 @@
     "dev:gateway": "yarn workspace @zf/gateway dev",
     "dev:partner": "yarn workspace @zf/partner-service dev",
     "dev:booking": "yarn workspace @zf/booking-service dev",
-    "dev:services": "concurrently -n \"USER,GATEWAY,PARTNER,BOOKING\" -c \"blue,green,yellow,magenta\" \"yarn dev:user\" \"yarn dev:gateway\" \"yarn dev:partner\" \"yarn dev:booking\"",
+    "dev:admin": "yarn workspace @zf/admin-service dev",
+    "dev:services": "concurrently -n \"USER,GATEWAY,PARTNER,BOOKING,ADMIN\" -c \"blue,green,yellow,magenta,cyan\" \"yarn dev:user\" \"sleep 2 && yarn dev:gateway\" \"sleep 2 && yarn dev:partner\" \"sleep 2 && yarn dev:booking\" \"sleep 2 && yarn dev:admin\"",
     "dev": "yarn dev:services"
   },
   "packageManager": "yarn@4.9.2",

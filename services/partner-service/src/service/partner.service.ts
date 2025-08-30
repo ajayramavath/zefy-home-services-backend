@@ -21,22 +21,14 @@ export class PartnerService {
 
   async assignBooking(partnerId: string, bookingAssignment: PartnerBookingAssignment): Promise<void> {
     try {
-      await PartnerStats.updateOne(
-        { partnerId: partnerId },
-        {
-          $set: {
-            curruntBookingId: bookingAssignment.bookingId,
-            updatedAt: new Date()
-          }
-        }
-      );
-
-      await Availability.updateOne(
-        { partnerId: partnerId },
-        {
-          status: 'ASSIGNED',
-        }
-      )
+      const availability = await Availability.findOne({ partnerId: partnerId });
+      if (!availability) {
+        return;
+      }
+      this.fastify.log.info(`---------------------------> Booking ${bookingAssignment.bookingId} assigned to partner ${partnerId}`);
+      availability.currentBookingId = bookingAssignment.bookingId;
+      availability.status = 'ASSIGNED';
+      await availability.save();
 
       this.fastify.log.info(`Booking ${bookingAssignment.bookingId} assigned to partner ${partnerId}`);
     } catch (error) {
@@ -47,12 +39,10 @@ export class PartnerService {
 
   async getPartnerCurrentBooking(partnerId: string): Promise<String | null> {
     try {
-      const partner = await PartnerStats.findOne(
-        { partnerId: partnerId },
-        { projection: { currentBooking: 1 } }
-      );
 
-      return partner?.curruntBookingId || null;
+      const availability = await Availability.findOne({ partnerId: partnerId });
+      return availability.currentBookingId || null;
+
     } catch (error) {
       this.fastify.log.error(`Error getting partner current booking: ${error.message}`);
       throw error;
@@ -68,7 +58,7 @@ export class PartnerService {
             location: {
               coordinates: [location.lat, location.lng],
               updatedAt: new Date()
-            },
+            }
           }
         }
       );

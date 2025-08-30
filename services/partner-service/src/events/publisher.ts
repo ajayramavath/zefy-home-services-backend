@@ -1,13 +1,10 @@
-// src/events/partner-publisher.ts
 import { FastifyInstance } from 'fastify';
-import { EventPublisher, PartnerLocationUpdatedEvent } from '@zf/common';
+import { EventPublisher, PartnerArrivedEvent, PartnerBookingLocationUpdatedEvent, PartnerLocationUpdatedEvent } from '@zf/common';
 import {
   PartnerRegisteredEvent,
   PartnerOnlineEvent,
   PartnerOfflineEvent,
-  PartnerBookingRequestedEvent,
   PartnerBookingDeclinedEvent,
-  PartnerStatusUpdatedEvent
 } from '@zf/common';
 
 export class PartnerEventPublisher extends EventPublisher {
@@ -69,34 +66,6 @@ export class PartnerEventPublisher extends EventPublisher {
     await this.publish(event, 'partner.offline');
   }
 
-  async publishPartnerBookingAcceptRequested(
-    bookingId: string,
-    partnerId: string,
-    partnerName: string,
-    partnerPhotoUrl: string,
-    partnerRatings: number,
-    partnerReviewCount: number,
-    partnerPhoneNumber: string,
-  ): Promise<void> {
-    const event: PartnerBookingRequestedEvent = {
-      eventType: 'PARTNER_BOOKING_REQUESTED',
-      data: {
-        bookingId,
-        partner: {
-          id: partnerId,
-          name: partnerName,
-          photoUrl: partnerPhotoUrl,
-          ratings: partnerRatings,
-          reviewCount: partnerReviewCount,
-          phoneNumber: partnerPhoneNumber,
-        },
-        requestedAt: new Date().toISOString()
-      }
-    };
-
-    await this.publish(event, 'partner.booking.accept_requested');
-  }
-
   async publishPartnerBookingDeclined(
     bookingId: string,
     partnerId: string,
@@ -115,13 +84,13 @@ export class PartnerEventPublisher extends EventPublisher {
     await this.publish(event, 'partner.booking.declined');
   }
 
-  async publishPartnerLocationUpdated(
+  async publishPartnerBookingLocationUpdated(
     partnerId: string,
     location: { latitude: number; longitude: number },
-    bookingId?: string,
+    bookingId: string,
   ): Promise<void> {
-    const event: PartnerLocationUpdatedEvent = {
-      eventType: 'PARTNER_LOCATION_UPDATED',
+    const event: PartnerBookingLocationUpdatedEvent = {
+      eventType: 'PARTNER_BOOKING_LOCATION_UPDATED',
       data: {
         partnerId,
         bookingId,
@@ -133,24 +102,19 @@ export class PartnerEventPublisher extends EventPublisher {
       }
     };
 
-    await this.publish(event, 'partner.location.updated');
+    await this.publish(event, 'partner.booking.location.updated');
   }
 
-  async publishPartnerStatusUpdated(
-    partnerId: string,
-    status: 'enroute' | 'arrived',
-    bookingId?: string
-  ): Promise<void> {
-    const event: PartnerStatusUpdatedEvent = {
-      eventType: 'PARTNER_STATUS_UPDATED',
+  async publishPartnerArrived(partnerId: string, bookingId: string, partner_userId: string): Promise<void> {
+    const event: PartnerArrivedEvent = {
+      eventType: 'PARTNER_ARRIVED',
       data: {
         partnerId,
         bookingId,
-        partnerStatus: status,
-        timestamp: new Date().toISOString()
+        partner_userId
       }
-    };
+    }
 
-    await this.publish(event, `partner.status.updated`);
+    this.publish(event, 'partner.arrived');
   }
 }

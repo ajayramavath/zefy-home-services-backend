@@ -35,6 +35,7 @@ export const SaveAddressSchema = {
   tags: ['Profile'],
   body: Type.Object({
     hubId: Type.String(),
+    label: Type.String(),
     googleMapsShortAddress: Type.String(),
     googleMapsLongAddress: Type.String(),
     houseNumber: Type.String(),

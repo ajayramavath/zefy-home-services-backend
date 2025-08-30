@@ -22,6 +22,7 @@ export interface IHub {
     phone: string;
     email?: string;
   }[];
+  supervisorIds: string[];
   isActive: boolean;
   hubServices?: any[];
   availableServices?: any[];

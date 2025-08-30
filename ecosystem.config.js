@@ -3,14 +3,14 @@ module.exports = {
     {
       name: 'user-service',
       script: 'services/user-service/dist/index.js',
-      cwd: '/home/ubuntu/your-repo-name',
+      cwd: '/home/ubuntu/zefy-home-services-backend',
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 3001,
         MONGO_URI: 'mongodb://localhost:27017/zefy_users',
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672'
@@ -22,14 +22,14 @@ module.exports = {
     {
       name: 'booking-service',
       script: 'services/booking-service/dist/index.js',
-      cwd: '/home/ubuntu/your-repo-name',
+      cwd: '/home/ubuntu/zefy-home-services-backend',
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 3002,
         MONGO_URI: 'mongodb://localhost:27017/zefy_bookings',
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672',
@@ -43,14 +43,14 @@ module.exports = {
     {
       name: 'partner-service',
       script: 'services/partner-service/dist/index.js',
-      cwd: '/home/ubuntu/your-repo-name',
+      cwd: '/home/ubuntu/zefy-home-services-backend',
       instances: 1,
       autorestart: true,
       watch: false,
       max_memory_restart: '1G',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,
+        PORT: 3003,
         MONGO_URI: 'mongodb://localhost:27017/zefy_partners',
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672',
@@ -63,7 +63,7 @@ module.exports = {
     {
       name: 'gateway',
       script: 'services/gateway/dist/index.js',
-      cwd: '/home/ubuntu/your-repo-name',
+      cwd: '/home/ubuntu/zefy-home-services-backend',
       instances: 1,
       autorestart: true,
       watch: false,
@@ -76,6 +76,25 @@ module.exports = {
         PARTNER_SERVICE_URL: 'http://localhost:3003',
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672'
+      },
+      error_file: '/home/ubuntu/logs/gateway-error.log',
+      out_file: '/home/ubuntu/logs/gateway-out.log',
+      log_file: '/home/ubuntu/logs/gateway.log'
+    },
+    {
+      name: 'admin',
+      script: 'services/admin-service/dist/index.js',
+      cwd: '/home/ubuntu/zefy-home-services-backend',
+      instances: 1,
+      autorestart: true,
+      watch: false,
+      max_memory_restart: '1G',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3004,
+        MONGO_URI: 'mongodb://localhost:27017/zefy_admin',
+        REDIS_URL: 'redis://localhost:6379',
+        AMQP_URL: 'amqp://admin:password123@localhost:5672',
       },
       error_file: '/home/ubuntu/logs/gateway-error.log',
       out_file: '/home/ubuntu/logs/gateway-out.log',

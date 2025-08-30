@@ -41,6 +41,13 @@ export interface IBooking {
   paymentStatus: 'pending' | 'baseAmountPaid' | 'fullAmountPaid' | 'refunded';
   partnerStatus: 'not_assigned' | 'assigned' | 'enroute' | 'arrived';
 
+  payment: {
+    baseAmountPaid: boolean;
+    fullAmountPaid: boolean;
+    baseAmountPaymentId?: string;
+    fullAmountPaymentId?: string;
+  }
+
   partner?: {
     id: string;
     name: string;

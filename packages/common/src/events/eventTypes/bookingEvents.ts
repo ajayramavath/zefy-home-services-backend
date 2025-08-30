@@ -1,5 +1,3 @@
-// Booking Events Types
-
 export interface BookingCreatedEvent {
   eventType: 'BOOKING_CREATED';
   data: {
@@ -45,6 +43,7 @@ export interface BookingCreatedEvent {
 export interface BookingReadyForAssignmentEvent {
   eventType: 'BOOKING_READY_FOR_ASSIGNMENT';
   data: {
+    supervisorIds: string[];
     bookingId: string;
     userId: string;
     hubId: string;
@@ -98,13 +97,28 @@ export interface BookingStatusUpdatedEvent {
   };
 }
 
-export interface PartnerAssignedEvent {
-  eventType: 'PARTNER_ASSIGNED';
+export interface BookingPartnerLocationUpdatedEvent {
+  eventType: 'BOOKING_PARTNER_LOCATION_UPDATED';
+  data: {
+    bookingId: string;
+    userId: string;
+    partnerId?: string;
+    location: {
+      latitude: number;
+      longitude: number;
+    }
+  }
+}
+
+export interface BookingPartnerAssignedEvent {
+  eventType: 'BOOKING_PARTNER_ASSIGNED';
   data: {
     bookingId: string;
     userId: string;
     partnerId: string;
+    partnerUserId: string;
     partnerDetails: {
+      id: string;
       name: string;
       phoneNumber: string;
       photoUrl: string;
@@ -286,7 +300,7 @@ export type BookingEvent =
   | BookingCreatedEvent
   | BookingReadyForAssignmentEvent
   | BookingStatusUpdatedEvent
-  | PartnerAssignedEvent
+  | BookingPartnerAssignedEvent
   | ServiceStartedEvent
   | ServiceCompletedEvent
   | BookingCancelledEvent
@@ -295,13 +309,14 @@ export type BookingEvent =
   | BookingScheduledEvent
   | HubManagerNotificationEvent
   | BookingErrorEvent
+  | BookingPartnerLocationUpdatedEvent
 
 
 export const BookingEventRouting = {
   BOOKING_CREATED: 'booking.created',
   BOOKING_READY_FOR_ASSIGNMENT: 'booking.ready_for_assignment',
   BOOKING_STATUS_UPDATED: 'booking.status.updated',
-  PARTNER_ASSIGNED: 'partner.assigned',
+  BOOKING_PARTNER_ASSIGNED: 'booking.partner.assigned',
   SERVICE_STARTED: 'service.started',
   SERVICE_COMPLETED: 'service.completed',
   PARTNER_LOCATION_UPDATED: 'partner.location.updated',
@@ -311,5 +326,6 @@ export const BookingEventRouting = {
   PAYMENT_STATUS_UPDATED: 'payment.status.updated',
   BOOKING_SCHEDULED: 'booking.scheduled',
   HUB_MANAGER_NOTIFICATION: 'hub.manager.notification',
-  BOOKING_ERROR: 'booking.error'
+  BOOKING_ERROR: 'booking.error',
+  BOOKING_PARTNER_LOCATION_UPDATED: 'booking.partner.location.updated'
 } as const;

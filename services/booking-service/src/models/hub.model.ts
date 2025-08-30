@@ -68,6 +68,7 @@ const hubSchema = new Schema<IHub>(
       },
       email: String,
     }],
+    supervisorIds: [String],
     isActive: {
       type: Boolean,
       default: true,

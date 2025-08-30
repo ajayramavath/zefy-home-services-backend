@@ -115,33 +115,11 @@ export class AuthController {
         request.server.log.error('Error fetching addresses:', addressError);
       }
 
-      // const dummyAddress = {
-      //   id: '123',
-      //   userId: '123',
-      //   hubId: '123',
-      //   googleMapsShortAddress: '123',
-      //   googleMapsLongAddress: '123, 456, Long Google Maps Address, Bangalore , Karnataka , India , 111111',
-      //   houseNumber: '123',
-      //   road: 'Example Road',
-      //   landmark: 'Example Landmark',
-      //   latitude: 12.9698,
-      //   longitude: 77.7500,
-      //   houseDetails: {
-      //     bedrooms: 2,
-      //     bathrooms: 2,
-      //     balconies: 1,
-      //   },
-      //   contactPhoneNumber: '8595058382',
-      //   contactName: 'Ajay',
-      //   createdAt: new Date(),
-      //   updatedAt: new Date(),
-      // }
-      // addresses.push(dummyAddress);
-
       const formattedAddresses = addresses.map(address => ({
         id: address._id.toString(),
         userId: address.userId.toString(),
         hubId: address.hubId,
+        label: address.label,
         googleMapsShortAddress: address.googleMapsShortAddress,
         googleMapsLongAddress: address.googleMapsLongAddress,
         houseNumber: address.house_number,

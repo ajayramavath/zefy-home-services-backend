@@ -2,6 +2,7 @@ export interface IAddress {
   _id?: string;
   userId: string;
   hubId: string;
+  label: string;
 
   lat: number;
   lng: number;

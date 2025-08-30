@@ -44,10 +44,9 @@ export async function hubRoutes(fastify: FastifyInstance) {
     }
   }, HubController.assignHub)
 
-  // Get hub services - GET /hubs/:hubId/services
   fastify.get('/hubs/:hubId/services', HubController.getHubServices)
 
-  fastify.post('/services', HubController.getHubServices)
+  fastify.get('/services/:hubId', HubController.getHubServices)
 
   fastify.post('/checkHub', HubController.checkHub)
 }

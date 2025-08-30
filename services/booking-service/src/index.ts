@@ -12,6 +12,7 @@ import { Hub } from './models/hub.model'
 import { bookingRoutes } from "./routes/booking.routes";
 import { BookingsEventPublisher } from "./events/publisher";
 import { BookingEventConsumer } from "./events/consumer";
+import { paymentRoutes } from "./routes/payment.routes";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3002;
 const app = Fastify({
@@ -51,6 +52,7 @@ const start = async () => {
 
     app.register(hubRoutes, { prefix: "/bookings" });
     app.register(bookingRoutes, { prefix: "/bookings" });
+    app.register(paymentRoutes, { prefix: "/bookings" });
 
     await app.listen({ port: PORT });
     app.log.info(`🚀 booking-service running on port ${PORT}`);
