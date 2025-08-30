@@ -85,6 +85,7 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("/bookings/health") ||
       req.url.startsWith("/admin/health") ||
       req.url.startsWith("/partners/ws") ||
+      req.url.startsWith("/admin/createAdmin") ||
       req.url.includes("/ws?") ||
       req.url.startsWith("/partners/test-ws-direct") ||
       req.headers.upgrade === 'websocket' ||
