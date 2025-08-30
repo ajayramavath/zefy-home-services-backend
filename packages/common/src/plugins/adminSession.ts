@@ -116,6 +116,7 @@ const adminSessionPlugin: FastifyPluginAsync<AdminSessionOpts> = async (app, opt
       "/docs",
       "/admin/auth/forgot-password",
       "/admin/auth/reset-password",
+      "/admin/createAdmin",
       "/ws",
     ];
 
