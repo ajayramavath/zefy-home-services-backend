@@ -34,7 +34,9 @@ module.exports = {
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672',
         USER_SERVICE_URL: 'http://localhost:3001',
-        PARTNER_SERVICE_URL: 'http://localhost:3003'
+        PARTNER_SERVICE_URL: 'http://localhost:3003',
+        RAZORPAY_KEY_ID_TEST: 'rzp_test_KQ4vZMSPLvhaYq',
+        RAZORPAY_KEY_SECRET_TEST: '9JGvYZAAljCx6ZTTs08WBXa4'
       },
       error_file: '/home/ubuntu/logs/booking-service-error.log',
       out_file: '/home/ubuntu/logs/booking-service-out.log',
