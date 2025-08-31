@@ -56,7 +56,11 @@ module.exports = {
         MONGO_URI: 'mongodb://localhost:27017/zefy_partners',
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672',
-        BOOKING_SERVICE_URL: 'http://localhost:3002'
+        BOOKING_SERVICE_URL: 'http://localhost:3002',
+        AWS_ACCESS_KEY_ID: "AKIAU6GD3YQG6AVWBJG4",
+        AWS_SECRET_ACCESS_KEY: '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',
+        AWS_REGION: 'ap-south-1',
+        AWS_S3_BUCKET: "zefy"
       },
       error_file: '/home/ubuntu/logs/partner-service-error.log',
       out_file: '/home/ubuntu/logs/partner-service-out.log',
