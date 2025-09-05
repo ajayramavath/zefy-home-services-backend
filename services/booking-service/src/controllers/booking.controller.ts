@@ -779,12 +779,12 @@ export class BookingController {
       )];
 
       const services = await Service.find({
-        id: { $in: allServiceIds }
-      }).select('serviceId name');
+        _id: { $in: allServiceIds }
+      })
 
       const serviceMap = new Map();
       services.forEach(service => {
-        serviceMap.set(service.serviceId, {
+        serviceMap.set(service.id, {
           id: service._id.toString(),
           serviceId: service.serviceId,
           name: service.name,
