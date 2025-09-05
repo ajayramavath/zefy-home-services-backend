@@ -779,7 +779,7 @@ export class BookingController {
       )];
 
       const services = await Service.find({
-        serviceId: { $in: allServiceIds }
+        id: { $in: allServiceIds }
       }).select('serviceId name');
 
       const serviceMap = new Map();
