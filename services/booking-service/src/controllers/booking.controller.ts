@@ -743,6 +743,7 @@ export class BookingController {
         createdAt: booking.createdAt.toISOString(),
         updatedAt: booking.updatedAt.toISOString(),
       }
+
       reply.status(200).send({
         success: true,
         data: PartnerBookingDetails
@@ -753,6 +754,75 @@ export class BookingController {
       reply.status(500).send({
         success: false,
         message: 'Failed to getbooking',
+        errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  static async getPartnersBookings(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    try {
+      const { userId, role } = req.session;
+      const { id } = req.params;
+      if (!userId || role !== 'partner') {
+        return reply.status(401).send({
+          success: false,
+          message: 'Unauthorized - Partner access required'
+        });
+      }
+
+      const bookings = await Booking.find({
+        'partner.id': id
+      });
+
+      const allServiceIds = [...new Set(
+        bookings.flatMap(booking => booking.serviceIds || [])
+      )];
+
+      const services = await Service.find({
+        serviceId: { $in: allServiceIds }
+      }).select('serviceId name');
+
+      const serviceMap = new Map();
+      services.forEach(service => {
+        serviceMap.set(service.serviceId, {
+          id: service._id.toString(),
+          serviceId: service.serviceId,
+          name: service.name,
+          descrption: service.description,
+          icon: service.icon,
+          type: service.type,
+          isPackage: service.isPackage,
+          ratePerMinute: service.ratePerMinute,
+          estimatedDuration: service.estimatedDuration,
+          tasksIncluded: service.tasksIncluded,
+          tasksExcluded: service.tasksExcluded,
+          isAvailable: service.isAvailable,
+        });
+      });
+
+      const allBookings = bookings.map(booking => {
+        return {
+          id: booking._id.toString(),
+          schedule: { type: booking.schedule.type, date: booking.schedule.date, time: booking.schedule.time, scheduledDateTime: (booking.schedule.scheduledDateTime).toISOString() },
+          services: (booking.serviceIds || []).map(serviceId => serviceMap.get(serviceId) || `Unknown Service (${serviceId})`),
+          bookingStatus: booking.bookingStatus,
+          partnerStatus: booking.partnerStatus,
+          createdAt: booking.createdAt.toISOString(),
+          updatedAt: booking.updatedAt.toISOString(),
+        }
+      });
+
+      reply.status(200).send({
+        success: true,
+        data: allBookings
+      });
+
+
+    } catch (error) {
+      req.server.log.error(error.toString());
+      reply.status(500).send({
+        success: false,
+        message: 'Failed to get bookings',
         errors: [error.message || 'Internal server error']
       });
     }

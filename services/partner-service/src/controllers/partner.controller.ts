@@ -364,7 +364,7 @@ export class PartnerController {
         if (!availability) {
           return false;
         }
-        return availability.isOnline && availability.status === 'IDLE'
+        return availability.isOnline
       })
 
       reply.status(200).send({

@@ -14,6 +14,8 @@ export async function bookingRoutes(fastify: FastifyInstance) {
 
   fastify.get('/partnerDashboard/:id', BookingController.getPartnerDashboardDetails);
 
+  fastify.get('/partner/bookings/:id', BookingController.getPartnersBookings);
+
   fastify.get('/getUnassignedBookings', BookingController.getUnassignedBookings);
 
   fastify.get('/getPartnerCurrentBooking/:id', BookingController.getPartnerCurrentBooking);
