@@ -124,6 +124,8 @@ const adminSessionPlugin: FastifyPluginAsync<AdminSessionOpts> = async (app, opt
       req.url.startsWith(path) || req.url.includes(path)
     );
 
+    console.log("isPublicPath----->", isPublicPath);
+
     if (isPublicPath ||
       req.headers.upgrade === 'websocket' ||
       req.headers.connection?.toLowerCase().includes('upgrade')) {

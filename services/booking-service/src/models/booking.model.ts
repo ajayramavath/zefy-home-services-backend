@@ -1,4 +1,4 @@
-import { mongoose, Schema } from '@zf/common';
+import { mongoose, Schema, Types } from '@zf/common';
 import { IBooking } from '@zf/types';
 
 const bookingSchema = new Schema<IBooking>({
@@ -60,6 +60,12 @@ const bookingSchema = new Schema<IBooking>({
     // index: true
   },
 
+  metadata: {
+    isRecurring: { type: Boolean, default: false },
+    isTemplate: { type: Boolean, default: false },
+    parentRecurringId: { type: String, ref: 'RecurringPattern' }
+  },
+
   amount: {
     baseAmount: { type: Number, required: true },
     extraAmount: { type: Number, default: 0 },
@@ -98,9 +104,39 @@ const bookingSchema = new Schema<IBooking>({
     id: { type: Schema.Types.ObjectId, ref: 'Partner' },
     name: String,
     photoUrl: String,
-    ratings: Number,
-    reviewCount: Number,
+    bookingsCount: Number,
     phoneNumber: String,
+    feedbacks: [{
+      _id: {
+        type: String
+      },
+      user: {
+        id: {
+          type: String,
+          required: true
+        },
+        name: {
+          type: String,
+          required: true
+        },
+        profilePhoto: String
+      },
+      partnerId: {
+        type: String,
+        required: true
+      },
+      rating: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 5
+      },
+      comment: String,
+      createdAt: {
+        type: Date,
+        default: Date.now
+      }
+    }],
     location: {
       lat: Number,
       lng: Number,
@@ -123,11 +159,9 @@ const bookingSchema = new Schema<IBooking>({
     isStartOtpVerified: { type: Boolean, default: false },
     isEndOtpVerified: { type: Boolean, default: false }
   },
-
-  review: {
-    rating: { type: Number, min: 1, max: 5 },
-    comment: String,
-    createdAt: Date
+  feedback: {
+    type: String,
+    ref: 'Feedback'
   }
 }, {
   timestamps: true

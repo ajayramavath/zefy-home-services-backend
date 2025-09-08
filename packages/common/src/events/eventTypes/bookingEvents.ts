@@ -122,8 +122,19 @@ export interface BookingPartnerAssignedEvent {
       name: string;
       phoneNumber: string;
       photoUrl: string;
-      ratings: number;
-      reviewCount: number;
+      bookingsCount: number;
+      feedbacks: {
+        _id: string;
+        user: {
+          id: string;
+          name: string;
+          profilePhoto?: string;
+        }
+        partnerId: string;
+        rating: number;
+        comment?: string;
+        createdAt: Date;
+      }[]
     };
     userLocation: {
       latitude: number;
@@ -189,13 +200,14 @@ export interface ReviewSubmittedEvent {
   eventType: 'REVIEW_SUBMITTED';
   data: {
     bookingId: string;
-    userId: string;
+    user: {
+      id: string;
+      name: string;
+      profilePhoto?: string;
+    },
     partnerId: string;
-    review: {
-      rating: number;
-      comment: string;
-      createdAt: string;
-    };
+    rating: number;
+    comment?: string;
     serviceIds: string[];
     timestamp: string;
   };

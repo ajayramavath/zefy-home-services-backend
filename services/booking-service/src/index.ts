@@ -13,6 +13,7 @@ import { bookingRoutes } from "./routes/booking.routes";
 import { BookingsEventPublisher } from "./events/publisher";
 import { BookingEventConsumer } from "./events/consumer";
 import { paymentRoutes } from "./routes/payment.routes";
+import { BookingController } from "./controllers/booking.controller";
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3002;
 const app = Fastify({
@@ -50,8 +51,9 @@ const start = async () => {
 
     app.get("/bookings/health", async () => ({ status: "ok", service: "booking-service" }));
 
+    const bookingController = new BookingController(app.bookingEventPublisher);
     app.register(hubRoutes, { prefix: "/bookings" });
-    app.register(bookingRoutes, { prefix: "/bookings" });
+    app.register(bookingRoutes, { prefix: "/bookings", bookingController });
     app.register(paymentRoutes, { prefix: "/bookings" });
 
     await app.listen({ port: PORT });

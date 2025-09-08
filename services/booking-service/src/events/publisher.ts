@@ -11,7 +11,7 @@ import {
   ReviewSubmittedEvent
 } from "@zf/common";
 import { FastifyInstance } from "fastify";
-import { IBooking, IService } from "@zf/types";
+import { IBooking, IFeedback, IService } from "@zf/types";
 
 export class BookingsEventPublisher extends EventPublisher {
   constructor(fastify: FastifyInstance) {
@@ -148,6 +148,7 @@ export class BookingsEventPublisher extends EventPublisher {
   }
 
   async publishPartnerAssigned(booking: IBooking, partnerUserId: string): Promise<void> {
+
     const event: BookingPartnerAssignedEvent = {
       eventType: 'BOOKING_PARTNER_ASSIGNED',
       data: {
@@ -160,8 +161,8 @@ export class BookingsEventPublisher extends EventPublisher {
           name: booking.partner!.name,
           phoneNumber: booking.partner!.phoneNumber,
           photoUrl: booking.partner!.photoUrl,
-          ratings: booking.partner!.ratings,
-          reviewCount: booking.partner!.reviewCount
+          bookingsCount: booking.partner!.bookingsCount,
+          feedbacks: booking.partner!.feedbacks,
         },
         userLocation: {
           latitude: booking.user.address.coordinates.lat,
@@ -248,18 +249,19 @@ export class BookingsEventPublisher extends EventPublisher {
     // Both user and partner apps will stop polling when status becomes 'cancelled'
   }
 
-  async publishReviewSubmitted(booking: IBooking): Promise<void> {
+  async publishReviewSubmitted(booking: IBooking, feedBack: IFeedback): Promise<void> {
     const event: ReviewSubmittedEvent = {
       eventType: 'REVIEW_SUBMITTED',
       data: {
         bookingId: booking._id,
-        userId: booking.user.id,
-        partnerId: booking.partner!.id,
-        review: {
-          rating: booking.review!.rating,
-          comment: booking.review!.comment || '',
-          createdAt: booking.review!.createdAt.toISOString()
+        user: {
+          id: feedBack.user.id,
+          name: feedBack.user.name,
+          profilePhoto: feedBack.user.profilePhoto
         },
+        partnerId: feedBack.partnerId,
+        rating: feedBack.rating,
+        comment: feedBack.comment,
         serviceIds: booking.serviceIds,
         timestamp: new Date().toISOString()
       }

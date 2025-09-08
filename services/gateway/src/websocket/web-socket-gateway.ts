@@ -296,7 +296,7 @@ export class WebSocketGateway {
   }
 
   private async handlePartnerAcceptedJob(connection: ClientConnection, data: PartnerBookingAcceptedData) {
-    const { id, name, ratings, reviewCount, phoneNumber, photoUrl, userId } = data.partner;
+    const { id, name, phoneNumber, photoUrl, userId } = data.partner;
     const event: PartnerBookingRequestedEvent = {
       eventType: 'PARTNER_BOOKING_REQUESTED',
       data: {
@@ -305,8 +305,6 @@ export class WebSocketGateway {
           id,
           name,
           photoUrl,
-          ratings,
-          reviewCount,
           phoneNumber,
           userId
         },

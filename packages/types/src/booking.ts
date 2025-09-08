@@ -1,3 +1,5 @@
+import { IFeedback } from "./feedback";
+
 export interface IBooking {
   _id: string;
 
@@ -52,8 +54,8 @@ export interface IBooking {
     id: string;
     name: string;
     photoUrl: string;
-    ratings: number;
-    reviewCount: number;
+    bookingsCount: number;
+    feedbacks: IFeedback[];
     phoneNumber: string;
     location?: {
       lat: number;
@@ -72,11 +74,13 @@ export interface IBooking {
     isEndOtpVerified: boolean;
   };
 
-  review?: {
-    rating: number;
-    comment: string;
-    createdAt: Date;
-  };
+  feedback?: string
+
+  metadata: {
+    isRecurring: boolean;
+    isTemplate: boolean;
+    parentRecurringId?: string;
+  }
 
   createdAt: Date;
   updatedAt: Date;

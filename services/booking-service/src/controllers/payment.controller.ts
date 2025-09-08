@@ -13,8 +13,6 @@ const razorpay = new Razorpay({
 interface CreateOrderBody {
   amount: number;
   currency?: string;
-  receipt?: string;
-  bookingId: string;
   userId: string;
   paymentType: 'base' | 'extra';
 }
@@ -23,16 +21,16 @@ interface VerifyPaymentBody {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  bookingId: string;
   paymentType: 'base' | 'extra';
 }
 
 export class PaymentController {
+
   static async createOrder(request: FastifyRequest<{ Body: CreateOrderBody }>, reply: FastifyReply) {
     try {
-      const { amount, currency = 'INR', receipt, bookingId, userId, paymentType } = request.body;
+      const { amount, currency = 'INR', userId, paymentType } = request.body;
 
-      if (!amount || !bookingId || !userId || !paymentType) {
+      if (!amount || !userId || !paymentType) {
         return reply.status(400).send({
           success: false,
           message: 'Amount, bookingId, paymentType and userId are required'
@@ -44,9 +42,8 @@ export class PaymentController {
       const options = {
         amount: amount * 100,
         currency,
-        receipt: receipt || `receipt_${bookingId}_${paymentType}`,
+        receipt: `receipt_${Date.now()}`,
         notes: {
-          bookingId,
           userId,
           paymentType
         },
@@ -76,9 +73,9 @@ export class PaymentController {
 
   static async verifyPayment(request: FastifyRequest<{ Body: VerifyPaymentBody }>, reply: FastifyReply) {
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId, paymentType } = request.body;
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentType } = request.body;
 
-      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !bookingId || !paymentType) {
+      if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentType) {
         return reply.status(400).send({
           success: false,
           message: 'All payment verification fields are required'
@@ -94,7 +91,6 @@ export class PaymentController {
       const isSignatureValid = expectedSignature === razorpay_signature;
 
       if (!isSignatureValid) {
-        console.log('Invalid payment signature for booking:', bookingId);
         return reply.status(400).send({
           success: false,
           message: 'Invalid payment signature'
@@ -103,16 +99,7 @@ export class PaymentController {
 
       const payment = await razorpay.payments.fetch(razorpay_payment_id);
 
-      console.log('Payment verified successfully:', {
-        orderId: razorpay_order_id,
-        paymentId: razorpay_payment_id,
-        bookingId,
-        status: payment.status
-      });
-
-      await PaymentController.updateBookingPaymentStatus(bookingId, paymentType, razorpay_payment_id);
-
-      reply.send({
+      return reply.send({
         success: true,
         message: 'Payment verified successfully',
         paymentId: razorpay_payment_id,
@@ -121,17 +108,6 @@ export class PaymentController {
         status: payment.status,
         amount: (payment.amount as any) / 100,
       });
-
-      setImmediate(async () => {
-        const bookingData = await Booking.findById(bookingId);
-        if (bookingData.schedule.type === 'instant') {
-          const services = await Service.find({ serviceId: { $in: bookingData.serviceIds } });
-          const hub = await Hub.findOne({ hubId: bookingData.hubId });
-          request.server.log.info(`Booking ready for assignment: ${bookingData}`);
-          await request.server.bookingEventPublisher.publishBookingReadyForAssignment(bookingData, services, hub.supervisorIds);
-        }
-      });
-
     } catch (error) {
       console.error('Error verifying payment:', error);
       return reply.status(500).send({

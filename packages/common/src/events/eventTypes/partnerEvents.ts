@@ -45,8 +45,6 @@ export interface PartnerBookingAcceptedData {
     userId: string;
     name: string;
     photoUrl: string;
-    ratings: number;
-    reviewCount: number;
     phoneNumber: string;
   };
   requestedAt: string;

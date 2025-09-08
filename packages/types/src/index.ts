@@ -8,3 +8,4 @@ export * from "./availability";
 export * from "./partnerStats";
 export * from "./address";
 export * from "./admin";
+export * from "./feedback";

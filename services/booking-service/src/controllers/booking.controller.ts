@@ -1,3 +1,5 @@
+import { SchedulerService } from './../services/scheduler.service';
+import { Feedback } from './../models/feedback.model';
 import { FastifyReply, FastifyRequest } from "fastify";
 import {
   CreateBookingRequest,
@@ -5,15 +7,23 @@ import {
   AssignPartnerRequest,
   VerifyOTPRequest,
   UpdatePartnerLocationRequest,
-  SubmitReviewRequest,
+  SubmitFeedbackRequest,
   GetBookingsQuery
 } from "../schemas/booking.schema";
 import { BookingsEventPublisher } from "../events/publisher";
 import { Booking } from "../models/booking.model";
 import { Service } from "../models/service.model";
 import { Hub } from "../models/hub.model";
+import { RecurringPattern } from '../models/recurringPattern.model';
 
 export class BookingController {
+  private schedulerService: SchedulerService;
+  private eventPublisher: BookingsEventPublisher;
+  constructor(eventPublisher: BookingsEventPublisher) {
+    this.eventPublisher = eventPublisher;
+    this.schedulerService = new SchedulerService(eventPublisher);
+    this.schedulerService.initialize();
+  }
 
   static async createBooking(req: FastifyRequest<{ Body: CreateBookingRequest }>, reply: FastifyReply) {
     req.server.log.info("createBooking");
@@ -58,8 +68,8 @@ export class BookingController {
           ...bookingData.amount,
           extraAmount: 0
         },
-        bookingStatus: 'created',
-        paymentStatus: 'pending',
+        bookingStatus: bookingData.schedule.type === 'instant' ? 'readyForAssignment' : 'created',
+        paymentStatus: 'baseAmountPaid',
         partnerStatus: 'not_assigned',
         payment: {
           baseAmountPaid: false,
@@ -83,8 +93,6 @@ export class BookingController {
       const hub = await Hub.findOne({ hubId: bookingData.hubId });
 
       setImmediate(async () => {
-        // await req.server.bookingEventPublisher.publishBookingCreated(savedBooking, services);
-
         if (bookingData.schedule.type === 'instant') {
           req.server.log.info(`Booking ready for assignment: ${savedBooking}`);
           await req.server.bookingEventPublisher.publishBookingReadyForAssignment(savedBooking, services, hub.supervisorIds);
@@ -169,6 +177,7 @@ export class BookingController {
       const booking = await Booking.findById({ _id: id })
         .populate('serviceIds')
         .populate('partner')
+        .populate('feedback')
         .lean();
 
       reply.status(200).send({
@@ -204,7 +213,7 @@ export class BookingController {
           'user.id': userId
         })
           .populate('serviceIds')
-          .populate('partner')
+          .populate('feedback')
           .sort({ createdAt: -1 })
           .lean();
 
@@ -218,7 +227,7 @@ export class BookingController {
       });
 
     } catch (error) {
-      req.server.log.error('Error fetching bookings:', error);
+      req.server.log.error(error.toString());
       reply.status(500).send({
         success: false,
         message: 'Failed to fetch bookings'
@@ -451,10 +460,9 @@ export class BookingController {
     }
   }
 
-  // Submit review (User)
-  static async submitReview(req: FastifyRequest<{
-    Params: { id: string },
-    Body: SubmitReviewRequest
+  static async submitFeedback(req: FastifyRequest<{
+    Params: { bookingId: string },
+    Body: SubmitFeedbackRequest
   }>, reply: FastifyReply) {
     try {
       const { sessionId, userId, role } = req.session;
@@ -465,7 +473,12 @@ export class BookingController {
         });
       }
 
-      const booking = await Booking.findById(req.params.id);
+      req.server.log.info(`Getting feedback for booking ${req.params.bookingId}`);
+
+      const booking = await Booking.findById(req.params.bookingId);
+
+      req.server.log.info(`booking ${booking}`);
+
       if (!booking) {
         return reply.status(404).send({
           success: false,
@@ -473,7 +486,9 @@ export class BookingController {
         });
       }
 
-      if (booking.user.id !== userId) {
+      const { rating, comment, user, partnerId } = req.body;
+
+      if ((booking.user.id).toString() !== userId || (booking.partner.id).toString() !== partnerId) {
         return reply.status(403).send({
           success: false,
           message: 'Access denied - Not your booking'
@@ -487,18 +502,23 @@ export class BookingController {
         });
       }
 
-      if (booking.review) {
+      if (booking.feedback) {
+        req.server.log.info(`Feedback already exists-> ${booking.feedback}`);
         return reply.status(400).send({
           success: false,
           message: 'Review already submitted for this booking'
         });
       }
 
-      booking.review = {
-        rating: req.body.rating,
-        comment: req.body.comment ?? '',
-        createdAt: new Date()
-      };
+      const feedback = new Feedback({
+        user,
+        partnerId,
+        rating,
+        comment,
+      });
+
+      await feedback.save();
+      booking.feedback = (feedback._id).toString();
       booking.updatedAt = new Date();
 
       const updatedBooking = await booking.save();
@@ -509,9 +529,8 @@ export class BookingController {
         data: { booking: updatedBooking }
       });
 
-      // Publish review submitted event
       setImmediate(async () => {
-        await req.server.bookingEventPublisher.publishReviewSubmitted(updatedBooking);
+        await req.server.bookingEventPublisher.publishReviewSubmitted(updatedBooking, feedback);
       });
 
     } catch (error) {
@@ -556,7 +575,6 @@ export class BookingController {
         });
       }
 
-      // Update booking status
       booking.bookingStatus = 'cancelled';
       booking.updatedAt = new Date();
 
@@ -568,7 +586,6 @@ export class BookingController {
         data: { booking: updatedBooking }
       });
 
-      // Publish cancellation event
       setImmediate(async () => {
         await req.server.bookingEventPublisher.publishBookingCancelled(updatedBooking);
       });
@@ -590,7 +607,12 @@ export class BookingController {
       const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-      const completedBookings = await Booking.find({
+      const allBookings = await Booking.find({
+        'partner.id': id,
+        bookingStatus: 'completed',
+      });
+
+      const todayBookings = await Booking.find({
         'partner.id': id,
         bookingStatus: 'completed',
         'serviceDetails.endTime': {
@@ -600,11 +622,10 @@ export class BookingController {
         }
       })
 
-      const totalJobs = completedBookings.length;
-      const totalEarnings = completedBookings.reduce((sum, booking) => {
-        return sum + (booking.amount?.totalAmount || booking.amount?.baseAmount || 0);
-      }, 0);
-      const recentBookings = completedBookings.slice(0, 5);
+      const todayJobs = todayBookings.length;
+      const totalJobs = allBookings.length;
+
+      const recentBookings = allBookings.slice(0, 5);
       const allServiceIds = [...new Set(
         recentBookings.flatMap(booking => booking.serviceIds || [])
       )];
@@ -630,7 +651,7 @@ export class BookingController {
 
       const dashboardData = {
         totalJobs,
-        totalEarnings,
+        todayJobs,
         recentJobs
       };
 
@@ -824,6 +845,271 @@ export class BookingController {
         success: false,
         message: 'Failed to get bookings',
         errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  static async getPartnerFeedbacks(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    try {
+      const { id } = req.params;
+      const feedbacks = await Feedback.find({
+        partnerId: id
+      });
+      reply.status(200).send({
+        success: true,
+        data: feedbacks
+      });
+    } catch (error) {
+      req.server.log.error(error.toString());
+      reply.status(500).send({
+        success: false,
+        message: 'Failed to get feedbacks',
+        errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  async createRecurringPattern(req: FastifyRequest<{
+    Body: {
+      userId: string;
+      type: 'daily' | 'weekly' | 'monthly';
+      schedule: {
+        time: string;
+        daysOfWeek?: string[];
+        datesOfMonth?: number[];
+      };
+      serviceIds: string[];
+      address: any;
+      hubId: string;
+    }
+  }>, reply: FastifyReply) {
+    try {
+      const recurringPattern = await this.schedulerService.createRecurringPattern(req.body);
+      reply.status(200).send({
+        success: true,
+        message: 'Recurring pattern created successfully',
+        data: recurringPattern
+      });
+    } catch (error) {
+      req.server.log.error(error.toString());
+      reply.status(500).send({
+        success: false,
+        message: 'Failed to create recurring pattern',
+        errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  async updateRecurringPatternStatus(req: FastifyRequest<{
+    Params: { recurringPatternId: string },
+    Body: {
+      status: 'active' | 'paused' | 'cancelled';
+    }
+  }>, reply: FastifyReply) {
+    try {
+      let recurringPattern;
+
+      switch (req.body.status) {
+        case 'active':
+          recurringPattern = await this.schedulerService.resumePattern(req.params.recurringPatternId, req.session.userId);
+          break;
+        case 'paused':
+          recurringPattern = await this.schedulerService.pausePattern(req.params.recurringPatternId, req.session.userId);
+          break;
+        case 'cancelled':
+          recurringPattern = await this.schedulerService.cancelPattern(req.params.recurringPatternId, req.session.userId);
+          break;
+      }
+      reply.status(200).send({
+        success: true,
+        message: 'Recurring pattern updated successfully',
+        data: recurringPattern
+      });
+    } catch (error) {
+      req.server.log.error(error.toString());
+      reply.status(500).send({
+        success: false,
+        message: 'Failed to update recurring pattern',
+        errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  static async getRecurringPatternBookings(req: FastifyRequest<{ Params: { recurringPatternId: string } }>, reply: FastifyReply) {
+    try {
+      const { userId, role } = req.session;
+      const { recurringPatternId } = req.params;
+      const pattern = await RecurringPattern.findOne({
+        _id: recurringPatternId,
+        userId
+      });
+      if (!pattern) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Recurring pattern not found'
+        });
+      }
+      const bookings = await Booking.find({
+        'metadata.parentRecurringId': recurringPatternId
+      }).populate('serviceIds')
+        .populate('feedback')
+        .sort({ 'schedule.scheduledDateTime': 1 })
+        .lean();
+
+      const now = new Date();
+      const upcomingBookings = bookings.filter(b =>
+        new Date(b.schedule.scheduledDateTime) >= now
+      ).length;
+      const completedBookings = bookings.filter(b =>
+        b.bookingStatus === 'completed'
+      ).length;
+
+      reply.status(200).send({
+        success: true,
+        data: {
+          pattern: {
+            patternId: pattern._id,
+            type: pattern.type,
+            schedule: pattern.schedule,
+            status: pattern.status,
+            nextScheduleDate: pattern.nextScheduleDate,
+            createdAt: pattern.createdAt,
+            updatedAt: pattern.updatedAt
+          },
+          bookings,
+          upcomingBookings,
+          completedBookings
+        }
+      });
+
+    } catch (error) {
+      req.server.log.error(error.toString());
+      reply.status(500).send({
+        success: false,
+        message: 'Failed to get recurring pattern bookings',
+        errors: [error.message || 'Internal server error']
+      });
+    }
+  }
+
+  static async getAllRecurringPatternsWithBookings(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const userId = request.session.userId
+      const filter: any = { userId };
+      const patterns = await RecurringPattern.find(filter)
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const patternsWithBookings = await Promise.all(
+        patterns.map(async (pattern) => {
+          const bookings = await Booking.find({
+            'metadata.parentRecurringId': pattern._id
+          })
+            .populate('serviceIds')
+            .populate('feedback')
+            .sort({ 'schedule.scheduledDateTime': 1 })
+            .lean();
+
+          const transformedBookings = bookings.map(booking => ({
+            _id: booking._id,
+            schedule: {
+              type: booking.schedule.type,
+              date: booking.schedule.date,
+              time: booking.schedule.time,
+              scheduledDateTime: booking.schedule.scheduledDateTime
+            },
+            serviceIds: booking.serviceIds,
+            user: {
+              id: booking.user.id,
+              name: booking.user.name,
+              phoneNumber: booking.user.phoneNumber,
+              address: {
+                id: booking.user.address.id,
+                addressString: booking.user.address.addressString,
+                coordinates: {
+                  lat: booking.user.address.coordinates.lat,
+                  lng: booking.user.address.coordinates.lng
+                },
+                details: {
+                  bedrooms: booking.user.address.details.bedrooms || 0,
+                  bathrooms: booking.user.address.details.bathrooms || 0,
+                  balconies: booking.user.address.details.balconies || 0
+                }
+              }
+            },
+            hubId: booking.hubId,
+            amount: {
+              baseAmount: booking.amount.baseAmount,
+              extraAmount: booking.amount.extraAmount,
+              totalAmount: booking.amount.totalAmount
+            },
+            bookingStatus: booking.bookingStatus,
+            paymentStatus: booking.paymentStatus,
+            partnerStatus: booking.partnerStatus,
+            partner: booking.partner ? {
+              id: booking.partner.id,
+              name: booking.partner.name,
+              phoneNumber: booking.partner.phoneNumber,
+              photoUrl: booking.partner.photoUrl,
+              bookingsCount: booking.partner.bookingsCount,
+              feedbacks: booking.partner.feedbacks || [],
+              location: booking.partner.location ? {
+                lat: booking.partner.location.lat,
+                lng: booking.partner.location.lng,
+                lastUpdated: booking.partner.location.lastUpdated
+              } : null
+            } : null,
+            serviceDetails: booking.serviceDetails ? {
+              startTime: booking.serviceDetails.startTime,
+              endTime: booking.serviceDetails.endTime,
+              duration: booking.serviceDetails.duration,
+              startOtp: booking.serviceDetails.startOtp,
+              endOtp: booking.serviceDetails.endOtp,
+              isStartOtpVerified: booking.serviceDetails.isStartOtpVerified,
+              isEndOtpVerified: booking.serviceDetails.isEndOtpVerified
+            } : null,
+            feedback: booking.feedback,
+            createdAt: booking.createdAt,
+            updatedAt: booking.updatedAt
+          }));
+
+          const now = new Date();
+          const upcomingBookings = transformedBookings.filter(b =>
+            new Date(b.schedule.scheduledDateTime) >= now
+          ).length;
+          const completedBookings = transformedBookings.filter(b =>
+            b.bookingStatus === 'completed'
+          ).length;
+
+          return {
+            patternId: pattern._id,
+            type: pattern.type,
+            schedule: pattern.schedule,
+            status: pattern.status,
+            nextScheduleDate: pattern.nextScheduleDate,
+            createdAt: pattern.createdAt,
+            updatedAt: pattern.updatedAt,
+            bookings: transformedBookings,
+            totalBookings: transformedBookings.length,
+            upcomingBookings,
+            completedBookings
+          };
+        })
+      );
+
+      return reply.send({
+        success: true,
+        data: {
+          patterns: patternsWithBookings,
+          count: patternsWithBookings.length
+        }
+      });
+
+    } catch (error) {
+      console.error('Error getting recurring patterns with bookings:', error);
+      return reply.code(500).send({
+        success: false,
+        message: 'Failed to get recurring patterns with bookings'
       });
     }
   }

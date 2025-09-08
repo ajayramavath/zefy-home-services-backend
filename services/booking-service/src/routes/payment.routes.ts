@@ -5,12 +5,10 @@ export async function paymentRoutes(fastify: FastifyInstance) {
   const createOrderSchema = {
     body: {
       type: 'object',
-      required: ['amount', 'bookingId', 'userId'],
+      required: ['amount', 'userId'],
       properties: {
         amount: { type: 'number', minimum: 1 },
         currency: { type: 'string', default: 'INR' },
-        receipt: { type: 'string' },
-        bookingId: { type: 'string' },
         userId: { type: 'string' },
         paymentType: { type: 'string', enum: ['base', 'extra'] },
       },
@@ -20,12 +18,11 @@ export async function paymentRoutes(fastify: FastifyInstance) {
   const verifyPaymentSchema = {
     body: {
       type: 'object',
-      required: ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature', 'bookingId'],
+      required: ['razorpay_order_id', 'razorpay_payment_id', 'razorpay_signature'],
       properties: {
         razorpay_order_id: { type: 'string' },
         razorpay_payment_id: { type: 'string' },
         razorpay_signature: { type: 'string' },
-        bookingId: { type: 'string' },
         paymentType: { type: 'string', enum: ['base', 'extra'] },
       },
     },

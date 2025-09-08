@@ -2,6 +2,7 @@ import { EventConsumer, PartnerBookingRequestedEvent, PartnerEnrouteEvent, Partn
 import { BookingsEventPublisher } from "./publisher";
 import { FastifyInstance } from "fastify";
 import { Booking } from "../models/booking.model";
+import { Feedback } from "../models/feedback.model";
 
 export class BookingEventConsumer extends EventConsumer {
   private bookingEventPublisher: BookingsEventPublisher;
@@ -26,7 +27,22 @@ export class BookingEventConsumer extends EventConsumer {
       return;
     }
 
-    booking.partner = partner;
+    const feedbacks = await Feedback.find({
+      partnerId: partner.id
+    });
+
+    const bookings = await Booking.countDocuments({
+      'partner.id': partner.id
+    })
+
+    booking.partner = {
+      id: partner.id,
+      name: partner.name,
+      photoUrl: partner.photoUrl,
+      phoneNumber: partner.phoneNumber,
+      bookingsCount: bookings,
+      feedbacks
+    };
     booking.partnerStatus = 'assigned';
     booking.bookingStatus = 'tracking';
 

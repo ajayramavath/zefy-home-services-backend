@@ -211,19 +211,30 @@ export const UpdatePartnerLocationSchema = Type.Object({
 });
 
 // Submit Review Schema
-export const SubmitReviewSchema = Type.Object({
+export const SubmitFeedbackSchema = Type.Object({
   rating: Type.Number({
     minimum: 1,
     maximum: 5,
     description: 'Rating from 1 to 5 stars'
   }),
-
   comment: Type.Optional(Type.String({
     maxLength: 1000,
     description: 'Review comment'
-  }))
-}, {
-  additionalProperties: false
+  })),
+  user: Type.Object({
+    id: Type.String({
+      minLength: 1,
+    }),
+    name: Type.String({
+      minLength: 2,
+    }),
+    profilePhoto: Type.Optional(Type.String({
+      format: 'uri',
+    })),
+  }),
+  partnerId: Type.String({
+    minLength: 1,
+  }),
 });
 
 // TypeScript types from schemas
@@ -232,7 +243,7 @@ export type UpdateBookingStatusRequest = Static<typeof UpdateBookingStatusSchema
 export type AssignPartnerRequest = Static<typeof AssignPartnerSchema>;
 export type VerifyOTPRequest = Static<typeof VerifyOTPSchema>;
 export type UpdatePartnerLocationRequest = Static<typeof UpdatePartnerLocationSchema>;
-export type SubmitReviewRequest = Static<typeof SubmitReviewSchema>;
+export type SubmitFeedbackRequest = Static<typeof SubmitFeedbackSchema>;
 
 // Query parameters schema for GET requests
 export const GetBookingsQuerySchema = Type.Object({

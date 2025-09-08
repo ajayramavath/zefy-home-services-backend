@@ -178,4 +178,52 @@ export class ProfileController {
       return reply.status(500).send({ error: "Failed to save address" });
     }
   }
+
+  static async editAddress(req: FastifyRequest<{
+    Params: { addressId: string },
+    Body: {
+      name: string;
+      phoneNumber: string;
+    }
+  }>, reply: FastifyReply) {
+    try {
+      const { name, phoneNumber } = req.body;
+      const addressId = req.params.addressId;
+      const address = await Address.findById(addressId);
+      if (!address) {
+        return reply.status(404).send({ error: "Address not found" });
+      }
+      if (address.userId.toString() != req.session.userId) {
+        return reply.status(403).send({ error: "You are not authorized to edit this address" });
+      }
+      address.contact_name = name;
+      address.contact_phone_number = phoneNumber;
+      const formattedAddresses = {
+        id: address._id.toString(),
+        userId: address.userId.toString(),
+        hubId: address.hubId,
+        label: address.label,
+        googleMapsShortAddress: address.googleMapsShortAddress,
+        googleMapsLongAddress: address.googleMapsLongAddress,
+        houseNumber: address.house_number,
+        road: address.road,
+        landmark: address.landmark || null,
+        latitude: address.lat,
+        longitude: address.lng,
+        houseDetails: {
+          bedrooms: address.bedrooms,
+          bathrooms: address.bathrooms,
+          balconies: address.balconies,
+        },
+        contactPhoneNumber: address.contact_phone_number,
+        contactName: address.contact_name,
+        createdAt: address.createdAt?.toISOString(),
+        updatedAt: address.updatedAt?.toISOString(),
+      }
+      await address.save();
+      return reply.status(200).send({ success: true, message: "Address edited successfully", data: formattedAddresses });
+    } catch (error) {
+
+    }
+  }
 }

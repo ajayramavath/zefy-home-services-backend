@@ -1,7 +1,9 @@
 import { FastifyInstance } from "fastify";
 import { BookingController } from "../controllers/booking.controller";
 
-export async function bookingRoutes(fastify: FastifyInstance) {
+export async function bookingRoutes(fastify: FastifyInstance, options: { bookingController: BookingController }) {
+  const { bookingController } = options;
+
   fastify.post("/createBooking", BookingController.createBooking);
 
   fastify.get("/getBookings/:id", BookingController.getBookings);
@@ -19,4 +21,18 @@ export async function bookingRoutes(fastify: FastifyInstance) {
   fastify.get('/getUnassignedBookings', BookingController.getUnassignedBookings);
 
   fastify.get('/getPartnerCurrentBooking/:id', BookingController.getPartnerCurrentBooking);
+
+  fastify.post('/submitFeedback/:bookingId', BookingController.submitFeedback);
+
+  fastify.get('/partnerFeedbacks/:partneId', BookingController.getPartnerFeedbacks);
+
+  fastify.post('/cancelBooking/:bookingId', BookingController.cancelBooking);
+
+  fastify.post('/createRecurringPattern', bookingController.createRecurringPattern.bind(bookingController));
+
+  fastify.post('/updateRecurringPatternStatus/:recurringPatternId', bookingController.updateRecurringPatternStatus.bind(bookingController));
+
+  fastify.get('/getRecurringPatternBookings/:recurringPatternId', BookingController.getRecurringPatternBookings);
+
+  fastify.get('/getAllRecurringPatternsWithBookings', BookingController.getAllRecurringPatternsWithBookings);
 }
