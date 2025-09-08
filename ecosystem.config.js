@@ -15,9 +15,6 @@ module.exports = {
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672'
       },
-      error_file: '/home/ubuntu/logs/user-service-error.log',
-      out_file: '/home/ubuntu/logs/user-service-out.log',
-      log_file: '/home/ubuntu/logs/user-service.log'
     },
     {
       name: 'booking-service',
@@ -38,9 +35,6 @@ module.exports = {
         RAZORPAY_KEY_ID_TEST: 'rzp_test_KQ4vZMSPLvhaYq',
         RAZORPAY_KEY_SECRET_TEST: '9JGvYZAAljCx6ZTTs08WBXa4'
       },
-      error_file: '/home/ubuntu/logs/booking-service-error.log',
-      out_file: '/home/ubuntu/logs/booking-service-out.log',
-      log_file: '/home/ubuntu/logs/booking-service.log'
     },
     {
       name: 'partner-service',
@@ -62,9 +56,6 @@ module.exports = {
         AWS_REGION: 'ap-south-1',
         AWS_S3_BUCKET: "zefy"
       },
-      error_file: '/home/ubuntu/logs/partner-service-error.log',
-      out_file: '/home/ubuntu/logs/partner-service-out.log',
-      log_file: '/home/ubuntu/logs/partner-service.log'
     },
     {
       name: 'gateway',
@@ -83,9 +74,6 @@ module.exports = {
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672'
       },
-      error_file: '/home/ubuntu/logs/gateway-error.log',
-      out_file: '/home/ubuntu/logs/gateway-out.log',
-      log_file: '/home/ubuntu/logs/gateway.log'
     },
     {
       name: 'admin',
@@ -102,9 +90,6 @@ module.exports = {
         REDIS_URL: 'redis://localhost:6379',
         AMQP_URL: 'amqp://admin:password123@localhost:5672',
       },
-      error_file: '/home/ubuntu/logs/gateway-error.log',
-      out_file: '/home/ubuntu/logs/gateway-out.log',
-      log_file: '/home/ubuntu/logs/gateway.log'
     }
   ]
 };
