@@ -40,7 +40,8 @@ module.exports = {
         RAZORPAY_KEY_ID_TEST: 'rzp_test_KQ4vZMSPLvhaYq',
         RAZORPAY_KEY_SECRET_TEST: '9JGvYZAAljCx6ZTTs08WBXa4',
         RAZORPAY_KEY_ID: 'rzp_live_RHWDkFOgJTOPnl',
-        RAZORPAY_KEY_SECRET: 'TlxWmyZTgwD062iomPHflH6r'
+        RAZORPAY_KEY_SECRET: 'TlxWmyZTgwD062iomPHflH6r',
+        RAZORPAY_WEBHOOK_SECRET: 'jhsgavdysmnbdfhkaejhfbhke'
       },
     },
     {
