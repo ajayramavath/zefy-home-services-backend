@@ -33,7 +33,9 @@ module.exports = {
         USER_SERVICE_URL: 'http://localhost:3001',
         PARTNER_SERVICE_URL: 'http://localhost:3003',
         RAZORPAY_KEY_ID_TEST: 'rzp_test_KQ4vZMSPLvhaYq',
-        RAZORPAY_KEY_SECRET_TEST: '9JGvYZAAljCx6ZTTs08WBXa4'
+        RAZORPAY_KEY_SECRET_TEST: '9JGvYZAAljCx6ZTTs08WBXa4',
+        RAZORPAY_KEY_ID: 'rzp_live_RHWDkFOgJTOPnl',
+        RAZORPAY_KEY_SECRET: 'TlxWmyZTgwD062iomPHflH6r'
       },
     },
     {

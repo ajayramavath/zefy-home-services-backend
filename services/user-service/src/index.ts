@@ -11,6 +11,8 @@ import { EventConsumer } from '@zf/common';
 import { handleHubAssigned, setupEventHandlers } from './events/handlers';
 import { EVENT_TYPES, QUEUES } from '@zf/common';
 
+process.env.TZ = 'Asia/Kolkata';
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 const app = Fastify({
   logger: {

@@ -15,6 +15,8 @@ import { BookingEventConsumer } from "./events/consumer";
 import { paymentRoutes } from "./routes/payment.routes";
 import { BookingController } from "./controllers/booking.controller";
 
+process.env.TZ = 'Asia/Kolkata';
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3002;
 const app = Fastify({
   logger: {

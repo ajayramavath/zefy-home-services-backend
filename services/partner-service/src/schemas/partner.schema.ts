@@ -52,21 +52,21 @@ const Step3DataSchema = Type.Object({
   endTime: Type.String()
 });
 
-const Step4DataSchema = Type.Object({
-  bankDetails: Type.Object({
-    accountHolderName: Type.String({ minLength: 2, maxLength: 100, pattern: '^[a-zA-Z\\s]+$' }),
-    accountNumber: Type.String({ pattern: '^[0-9]{9,18}$' }),
-    ifscCode: Type.String({ pattern: '^[A-Z]{4}0[A-Z0-9]{6}$' }),
-    bankName: Type.String({ minLength: 2, maxLength: 100 })
-  }),
-  documents: Type.Optional(Type.Object({
-    aadharCard: Type.Optional(Type.String()),
-    panCard: Type.Optional(Type.String()),
-    bankPassbook: Type.Optional(Type.String())
-  }))
-});
+// const Step4DataSchema = Type.Object({
+//   bankDetails: Type.Object({
+//     accountHolderName: Type.String({ minLength: 2, maxLength: 100, pattern: '^[a-zA-Z\\s]+$' }),
+//     accountNumber: Type.String({ pattern: '^[0-9]{9,18}$' }),
+//     ifscCode: Type.String({ pattern: '^[A-Z]{4}0[A-Z0-9]{6}$' }),
+//     bankName: Type.String({ minLength: 2, maxLength: 100 })
+//   }),
+//   documents: Type.Optional(Type.Object({
+//     aadharCard: Type.Optional(Type.String()),
+//     panCard: Type.Optional(Type.String()),
+//     bankPassbook: Type.Optional(Type.String())
+//   }))
+// });
 
-const Step5DataSchema = Type.Object({
+const Step4DataSchema = Type.Object({
   type: Type.Union([Type.Literal('aadhaar'), Type.Literal('pan'), Type.Literal('driving_license')]),
   number: Type.String({ pattern: '^[2-9]{1}[0-9]{11}$' }),
   selfiePhoto: Type.String(),
@@ -111,10 +111,10 @@ const UpdateOnboardingStepBody = Type.Union([
     step: Type.Literal(4),
     data: Step4DataSchema
   }),
-  Type.Object({
-    step: Type.Literal(5),
-    data: Step5DataSchema
-  })
+  // Type.Object({
+  //   step: Type.Literal(5),
+  //   data: Step5DataSchema
+  // })
 ]);
 
 export const UpdateOnboardingStepSchema = {
@@ -232,12 +232,49 @@ export const UpdateJobStatusSchema = {
   }
 };
 
+export const UpdatePersonalInfoSchema = Type.Object({
+  fullName: Type.Optional(Type.String({
+    minLength: 2,
+    maxLength: 100,
+    pattern: '^[a-zA-Z\\s]+$'
+  })),
+  dateOfBirth: Type.Optional(Type.String({ format: 'date' })),
+  gender: Type.Optional(Type.Union([
+    Type.Literal('male'),
+    Type.Literal('female'),
+    Type.Literal('other')
+  ]))
+});
+
+export const UpdateServicesSchema = Type.Object({
+  serviceIDs: Type.Array(Type.String(), {
+    minItems: 1,
+    uniqueItems: true
+  })
+});
+
+export const UpdateAvailabilityDetailsSchema = Type.Object({
+  availableDays: Type.Optional(Type.Array(
+    Type.String({
+      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    }),
+    { minItems: 1, uniqueItems: true }
+  )),
+  startTime: Type.Optional(Type.String({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]' })),
+  endTime: Type.Optional(Type.String({ pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]' }))
+})
+
+
+
 export type UpdateOnboardingStep = Static<typeof UpdateOnboardingStepSchema.body>;
 export type Step1Data = Static<typeof Step1DataSchema>;
 export type Step2Data = Static<typeof Step2DataSchema>;
 export type Step3Data = Static<typeof Step3DataSchema>;
 export type Step4Data = Static<typeof Step4DataSchema>;
-export type Step5Data = Static<typeof Step5DataSchema>;
+export type UpdatePersonalInfo = Static<typeof UpdatePersonalInfoSchema>;
+export type UpdateServices = Static<typeof UpdateServicesSchema>;
+export type UpdateAvailabilityDetails = Static<typeof UpdateAvailabilityDetailsSchema>;
+// export type Step5Data = Static<typeof Step5DataSchema>;
 export type UpdateAvailabilityBody = Static<typeof UpdateAvailabilitySchema.body>;
 export type UpdateJobStatusBody = Static<typeof UpdateJobStatusSchema.body>;
 export type UpdateJobStatusParams = Static<typeof UpdateJobStatusSchema.params>;

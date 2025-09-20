@@ -4,6 +4,8 @@ import "dotenv/config";
 import { rabbitmqPlugin, redisPlugin } from "@zf/common";
 import cors from '@fastify/cors';
 
+process.env.TZ = 'Asia/Kolkata';
+
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 const app = Fastify({
   logger: {

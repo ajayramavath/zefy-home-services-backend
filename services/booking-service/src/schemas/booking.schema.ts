@@ -98,13 +98,12 @@ export const CreateBookingSchema = Type.Object({
     })
   }),
 
-  paymentMethod: Type.Optional(Type.Union([
-    Type.Literal('upi'),
-    Type.Literal('card'),
-    Type.Literal('cash'),
-    Type.Literal('wallet')
-  ])),
-
+  razorpayOrderId: Type.String({
+    minLength: 1,
+  }),
+  razorpayPaymentId: Type.String({
+    minLength: 1,
+  }),
   specialInstructions: Type.Optional(Type.String({
     maxLength: 500,
     description: 'Special instructions for the service'

@@ -9,6 +9,8 @@ import {
 } from "@zf/common";
 import { adminRoutes } from "./routes/admin.routes";
 
+process.env.TZ = 'Asia/Kolkata';
+
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3004;
 const app = Fastify({

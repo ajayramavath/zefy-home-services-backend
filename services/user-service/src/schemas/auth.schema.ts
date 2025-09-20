@@ -14,7 +14,7 @@ const ErrorResponse = Type.Object({
 
 const PhoneNumberPattern = '^[6-9]\\d{9}$';
 
-const OtpPattern = '^\\d{6}$';
+const OtpPattern = '^\\d{4}$';
 
 export const SendOtpSchema = {
   description: 'Send OTP to phone number',
@@ -56,8 +56,8 @@ export const VerifyOtpAndLoginSchema = {
     }),
     otp: Type.String({
       pattern: OtpPattern,
-      description: '6-digit OTP',
-      examples: ['000000']
+      description: '4-digit OTP',
+      examples: ['0000']
     }),
     role: Type.Union([
       Type.Literal('admin'),

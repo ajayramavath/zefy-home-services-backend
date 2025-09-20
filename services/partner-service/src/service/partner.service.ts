@@ -28,6 +28,7 @@ export class PartnerService {
       this.fastify.log.info(`---------------------------> Booking ${bookingAssignment.bookingId} assigned to partner ${partnerId}`);
       availability.currentBookingId = bookingAssignment.bookingId;
       availability.status = 'ASSIGNED';
+      availability.todayStats.scheduledJobs.push(bookingAssignment.bookingId);
       await availability.save();
 
       this.fastify.log.info(`Booking ${bookingAssignment.bookingId} assigned to partner ${partnerId}`);

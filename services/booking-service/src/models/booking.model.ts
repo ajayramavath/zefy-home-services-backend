@@ -55,9 +55,6 @@ const bookingSchema = new Schema<IBooking>({
 
   hubId: {
     type: String,
-    // ref: 'Hub',
-    // required: true,
-    // index: true
   },
 
   metadata: {
@@ -69,12 +66,12 @@ const bookingSchema = new Schema<IBooking>({
   amount: {
     baseAmount: { type: Number, required: true },
     extraAmount: { type: Number, default: 0 },
-    totalAmount: { type: Number, required: true }
+    totalAmount: { type: Number }
   },
 
   bookingStatus: {
     type: String,
-    enum: ['created', 'readyForAssignment', 'tracking', 'ongoing', 'completed', 'cancelled'],
+    enum: ['created', 'readyForAssignment', 'tracking', 'ongoing', 'completed', 'cancelled_with_refund', 'cancelled_without_refund'],
     default: 'created',
     index: true
   },
@@ -89,8 +86,26 @@ const bookingSchema = new Schema<IBooking>({
   payment: {
     baseAmountPaid: { type: Boolean, default: false },
     fullAmountPaid: { type: Boolean, default: false },
-    baseAmountPaymentId: { type: String },
-    fullAmountPaymentId: { type: String },
+    baseAmountPayment: {
+      razorpayOrderId: { type: String },
+      razorpayPaymentId: { type: String },
+    },
+    fullAmountPayment: {
+      razorpayOrderId: { type: String },
+      razorpayPaymentId: { type: String },
+    }
+  },
+
+  refund: {
+    razorpayRefundId: { type: String },
+    amount: { type: Number },
+    status: {
+      type: String,
+      enum: ['initiated', 'processed', 'failed'],
+    },
+    initiatedAt: { type: String },
+    processedAt: { type: String },
+    failureReason: { type: String }
   },
 
   partnerStatus: {

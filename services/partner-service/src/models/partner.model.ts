@@ -55,27 +55,27 @@ const partnerSchema = new Schema<IPartner>(
     },
 
 
-    bankDetails: {
-      type: {
-        accountHolderName: {
-          type: String,
-          required: true,
-        },
-        accountNumber: {
-          type: String,
-          required: true,
-        },
-        ifscCode: {
-          type: String,
-          required: true,
-        },
-        bankName: {
-          type: String,
-          required: true,
-        }
-      },
-      required: function () { return this.completionStep >= 4; }
-    },
+    // bankDetails: {
+    //   type: {
+    //     accountHolderName: {
+    //       type: String,
+    //       required: true,
+    //     },
+    //     accountNumber: {
+    //       type: String,
+    //       required: true,
+    //     },
+    //     ifscCode: {
+    //       type: String,
+    //       required: true,
+    //     },
+    //     bankName: {
+    //       type: String,
+    //       required: true,
+    //     }
+    //   },
+    //   required: function () { return this.completionStep >= 4; }
+    // },
 
 
     verification: {
@@ -103,7 +103,7 @@ const partnerSchema = new Schema<IPartner>(
           completedAt: Date,
         }
       },
-      required: function () { return this.completionStep >= 5; }
+      required: function () { return this.completionStep >= 4; }
     },
     status: {
       type: String,
@@ -114,7 +114,7 @@ const partnerSchema = new Schema<IPartner>(
       type: Number,
       default: 0,
       min: 0,
-      max: 5,
+      max: 4,
     },
     approvedAt: Date,
     training: {

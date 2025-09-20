@@ -318,6 +318,8 @@ export class WebSocketGateway {
     this.fastify.log.info(`Broadcasting admin job request to ${data.partner_userIds.length} users`);
     const { partner_userIds, booking } = data;
 
+    this.fastify.log.info(`${booking.toString()}`);
+
     const message: WSMessage = {
       type: 'NEW_JOB_REQUEST',
       data: {
@@ -334,7 +336,6 @@ export class WebSocketGateway {
         partnerIds: partner_userIds
       }
     });
-
   }
 
   private async setupEventConsumers() {

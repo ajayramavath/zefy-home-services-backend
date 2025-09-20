@@ -1,5 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { BookingController } from "../controllers/booking.controller";
+import { PaymentController } from "../controllers/payment.controller";
+import { handleRazorpayWebhook } from "../controllers/webhook.controller";
 
 export async function bookingRoutes(fastify: FastifyInstance, options: { bookingController: BookingController }) {
   const { bookingController } = options;
@@ -26,7 +28,7 @@ export async function bookingRoutes(fastify: FastifyInstance, options: { booking
 
   fastify.get('/partnerFeedbacks/:partneId', BookingController.getPartnerFeedbacks);
 
-  fastify.post('/cancelBooking/:bookingId', BookingController.cancelBooking);
+  fastify.post('/cancelBooking/:bookingId', PaymentController.cancelBooking);
 
   fastify.post('/createRecurringPattern', bookingController.createRecurringPattern.bind(bookingController));
 
@@ -35,4 +37,13 @@ export async function bookingRoutes(fastify: FastifyInstance, options: { booking
   fastify.get('/getRecurringPatternBookings/:recurringPatternId', BookingController.getRecurringPatternBookings);
 
   fastify.get('/getAllRecurringPatternsWithBookings', BookingController.getAllRecurringPatternsWithBookings);
+
+  fastify.post('/webhooks/razorpay/cancellation', {
+    preHandler: async (request, reply) => {
+      reply.header('ngrok-skip-browser-warning', 'true');
+    },
+    config: {
+      rawBody: true
+    }
+  }, handleRazorpayWebhook);
 }

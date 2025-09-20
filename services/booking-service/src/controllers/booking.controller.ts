@@ -65,15 +65,20 @@ export class BookingController {
         user: bookingData.user,
         hubId: bookingData.hubId,
         amount: {
-          ...bookingData.amount,
+          baseAmount: bookingData.amount.totalAmount,
+          totalAmount: bookingData.amount.totalAmount,
           extraAmount: 0
         },
         bookingStatus: bookingData.schedule.type === 'instant' ? 'readyForAssignment' : 'created',
         paymentStatus: 'baseAmountPaid',
         partnerStatus: 'not_assigned',
         payment: {
-          baseAmountPaid: false,
+          baseAmountPaid: true,
           fullAmountPaid: false,
+          baseAmountPayment: {
+            razorpayOrderId: bookingData.razorpayOrderId,
+            razorpayPaymentId: bookingData.razorpayPaymentId
+          }
         }
       });
 
@@ -322,6 +327,9 @@ export class BookingController {
       let isValid = false;
       let message = '';
 
+      const now = new Date();
+      const dateString = now.toISOString();
+
       if (type === 'start') {
         isValid = otp === booking.serviceDetails.startOtp;
         if (isValid) {
@@ -335,9 +343,14 @@ export class BookingController {
         isValid = otp === booking.serviceDetails.endOtp;
         if (isValid) {
           booking.serviceDetails.isEndOtpVerified = true;
-          booking.serviceDetails.endTime = new Date();
-
           const services = await Service.find({ _id: { $in: booking.serviceIds } });
+          const baseDuration = services.reduce((durationSum, service) => durationSum + service.estimatedDuration, 0);
+
+          const actualEndTime = new Date();
+          const testEndTime = new Date(booking.serviceDetails.startTime.getTime() + (baseDuration + 10) * 60 * 1000);
+          booking.serviceDetails.endTime = testEndTime;
+
+          // booking.serviceDetails.endTime = new Date();
 
           if (booking.serviceDetails.startTime) {
             const duration = Math.ceil(
@@ -346,18 +359,24 @@ export class BookingController {
             booking.serviceDetails.duration = duration;
             req.server.log.info(`total service duration: ${duration}`);
 
-            const baseDuration = services.reduce((durationSum, service) => durationSum + service.estimatedDuration, 0);
+
             req.server.log.info(`Base duration: ${baseDuration}`);
             const ratePerMinute = 3;
             const extraMinutes = Math.max(0, duration - baseDuration);
             req.server.log.info(`total extra minutes: ${duration}`);
             booking.amount.extraAmount = extraMinutes * ratePerMinute;
 
-            req.server.log.info(`total extra amount: ${duration}`);
-            booking.amount.totalAmount = booking.amount.baseAmount + booking.amount.extraAmount;
-            req.server.log.info(`total final amount: ${duration}`);
+            req.server.log.info(`------------total extra amount: ${booking.amount.extraAmount}`);
+            const currentTotalAmount = booking.amount.totalAmount || booking.amount.baseAmount;
+            booking.amount.totalAmount = currentTotalAmount + booking.amount.extraAmount;
+            req.server.log.info(`-------------total final amount: ${booking.amount.totalAmount}`);
             if (booking.amount.extraAmount == 0 && booking.amount.totalAmount == booking.amount.baseAmount) {
               booking.paymentStatus = 'fullAmountPaid';
+              booking.payment.fullAmountPaid = true;
+              booking.payment.fullAmountPayment = {
+                razorpayOrderId: booking.payment.baseAmountPayment.razorpayOrderId,
+                razorpayPaymentId: booking.payment.baseAmountPayment.razorpayPaymentId
+              }
             }
           }
 
@@ -543,63 +562,6 @@ export class BookingController {
     }
   }
 
-  static async cancelBooking(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    try {
-      const { sessionId, userId, role } = req.session;
-      if (!sessionId || !userId || role !== 'user') {
-        return reply.status(401).send({
-          success: false,
-          message: 'Unauthorized - User access required'
-        });
-      }
-
-      const booking = await Booking.findById(req.params.id);
-      if (!booking) {
-        return reply.status(404).send({
-          success: false,
-          message: 'Booking not found'
-        });
-      }
-
-      if (booking.user.id !== userId) {
-        return reply.status(403).send({
-          success: false,
-          message: 'Access denied - Not your booking'
-        });
-      }
-
-      if (['completed', 'cancelled', 'ongoing'].includes(booking.bookingStatus)) {
-        return reply.status(400).send({
-          success: false,
-          message: 'Cannot cancel booking in current status'
-        });
-      }
-
-      booking.bookingStatus = 'cancelled';
-      booking.updatedAt = new Date();
-
-      const updatedBooking = await booking.save();
-
-      reply.status(200).send({
-        success: true,
-        message: 'Booking cancelled successfully',
-        data: { booking: updatedBooking }
-      });
-
-      setImmediate(async () => {
-        await req.server.bookingEventPublisher.publishBookingCancelled(updatedBooking);
-      });
-
-    } catch (error) {
-      req.server.log.error('Error cancelling booking:', error);
-      reply.status(500).send({
-        success: false,
-        message: 'Failed to cancel booking',
-        errors: [error.message || 'Internal server error']
-      });
-    }
-  }
-
   static async getPartnerDashboardDetails(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
       const { id } = req.params;
@@ -627,27 +589,46 @@ export class BookingController {
 
       const recentBookings = allBookings.slice(0, 5);
       const allServiceIds = [...new Set(
-        recentBookings.flatMap(booking => booking.serviceIds || [])
+        recentBookings.flatMap(booking => booking.serviceIds || []).map(id => id.toString())
       )];
 
+      req.server.log.info(`allServiceIds ${allServiceIds}`);
+
       const services = await Service.find({
-        serviceId: { $in: allServiceIds }
-      }).select('serviceId name');
+        _id: { $in: allServiceIds }
+      })
+
+      req.server.log.info(`services ${services[0]}`);
 
       const serviceMap = new Map();
       services.forEach(service => {
-        serviceMap.set(service.serviceId, service.name);
+        serviceMap.set((service._id).toString(), {
+          id: service._id.toString(),
+          serviceId: service.serviceId,
+          name: service.name,
+          description: service.description,
+          icon: service.icon,
+          type: service.type,
+          isPackage: service.isPackage,
+          ratePerMinute: service.ratePerMinute,
+          estimatedDuration: service.estimatedDuration,
+          tasksIncluded: service.tasksIncluded,
+          tasksExcluded: service.tasksExcluded,
+          isAvailable: service.isAvailable,
+        });
       });
 
       const recentJobs = recentBookings.map(booking => ({
         bookingId: booking._id.toString(),
-        services: (booking.serviceIds || []).map(serviceId =>
-          serviceMap.get(serviceId) || `Unknown Service (${serviceId})`
-        ),
+        services: (booking.serviceIds || []).map(serviceId => serviceMap.get(serviceId.toString()) || `Unknown Service (${serviceId})`),
         location: booking.user?.address?.addressString || 'Location not available',
         totalAmount: booking.amount?.totalAmount || 0,
         createdAt: booking.serviceDetails?.endTime.toISOString() || booking.updatedAt.toISOString()
       }));
+
+      req.server.log.info(`serviceMap here 1 ${(recentJobs[0].toString())}`);
+
+
 
       const dashboardData = {
         totalJobs,
@@ -662,7 +643,7 @@ export class BookingController {
       });
 
     } catch (error) {
-      req.server.log.error('Error cancelling booking:', error);
+      req.server.log.error('Error getting booking:', error);
       reply.status(500).send({
         success: false,
         message: 'Failed to get partner dashboard details',
@@ -724,13 +705,15 @@ export class BookingController {
           message: 'Access denied - Not assigned to this booking'
         });
       }
-      const services = await Service.find({ serviceId: { $in: booking.serviceIds } });
+      const allServiceIds = (booking.serviceIds || []).map(id => id.toString())
+
+      const services = await Service.find({ _id: { $in: allServiceIds } });
       const serviceDetails = services.map(service => {
         return {
           id: service._id.toString(),
           serviceId: service.serviceId,
           name: service.name,
-          descrption: service.description,
+          description: service.description,
           icon: service.icon,
           type: service.type,
           isPackage: service.isPackage,
@@ -796,20 +779,24 @@ export class BookingController {
       });
 
       const allServiceIds = [...new Set(
-        bookings.flatMap(booking => booking.serviceIds || [])
+        bookings.flatMap(booking => booking.serviceIds || []).map(id => id.toString())
       )];
+
+      req.server.log.info(`allServiceIds ${allServiceIds}`);
 
       const services = await Service.find({
         _id: { $in: allServiceIds }
       })
 
+      req.server.log.info(`services ${services[0]}`);
+
       const serviceMap = new Map();
       services.forEach(service => {
-        serviceMap.set(service.id, {
+        serviceMap.set((service._id).toString(), {
           id: service._id.toString(),
           serviceId: service.serviceId,
           name: service.name,
-          descrption: service.description,
+          description: service.description,
           icon: service.icon,
           type: service.type,
           isPackage: service.isPackage,
@@ -825,7 +812,7 @@ export class BookingController {
         return {
           id: booking._id.toString(),
           schedule: { type: booking.schedule.type, date: booking.schedule.date, time: booking.schedule.time, scheduledDateTime: (booking.schedule.scheduledDateTime).toISOString() },
-          services: (booking.serviceIds || []).map(serviceId => serviceMap.get(serviceId) || `Unknown Service (${serviceId})`),
+          services: (booking.serviceIds || []).map(serviceId => serviceMap.get(serviceId.toString()) || `Unknown Service (${serviceId})`),
           bookingStatus: booking.bookingStatus,
           partnerStatus: booking.partnerStatus,
           createdAt: booking.createdAt.toISOString(),

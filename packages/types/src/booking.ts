@@ -39,17 +39,31 @@ export interface IBooking {
     totalAmount: number;
   };
 
-  bookingStatus: 'created' | 'readyForAssignment' | 'tracking' | 'ongoing' | 'completed' | 'cancelled';
+  bookingStatus: 'created' | 'readyForAssignment' | 'tracking' | 'ongoing' | 'completed' | 'cancelled_with_refund' | 'cancelled_without_refund';
   paymentStatus: 'pending' | 'baseAmountPaid' | 'fullAmountPaid' | 'refunded';
   partnerStatus: 'not_assigned' | 'assigned' | 'enroute' | 'arrived';
 
   payment: {
     baseAmountPaid: boolean;
     fullAmountPaid: boolean;
-    baseAmountPaymentId?: string;
-    fullAmountPaymentId?: string;
-  }
+    baseAmountPayment: {
+      razorpayOrderId?: string;
+      razorpayPaymentId?: string;
+    };
+    fullAmountPayment: {
+      razorpayOrderId?: string;
+      razorpayPaymentId?: string;
+    }
+  };
 
+  refund?: {
+    razorpayRefundId: string;
+    amount: number;
+    status: 'initiated' | 'processed' | 'failed';
+    initiatedAt: string;
+    processedAt?: string;
+    failureReason?: string;
+  };
   partner?: {
     id: string;
     name: string;

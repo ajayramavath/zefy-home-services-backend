@@ -86,11 +86,11 @@ const sessionPlugin: FastifyPluginAsync<SessionOpts> = async (app, opts) => {
       req.url.startsWith("/admin/health") ||
       req.url.startsWith("/partners/ws") ||
       req.url.startsWith("/admin/createAdmin") ||
+      req.url.startsWith("/bookings/webhooks") ||
       req.url.includes("/ws?") ||
       req.url.startsWith("/partners/test-ws-direct") ||
       req.headers.upgrade === 'websocket' ||
       req.headers.connection?.toLowerCase().includes('upgrade')
-
     ) {
       return;
     }

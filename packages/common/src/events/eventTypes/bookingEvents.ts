@@ -90,7 +90,7 @@ export interface BookingStatusUpdatedEvent {
     userId: string;
     partnerId?: string;
     previousStatus: string;
-    newStatus: 'created' | 'readyForAssignment' | 'tracking' | 'ongoing' | 'completed' | 'cancelled';
+    newStatus: 'created' | 'readyForAssignment' | 'tracking' | 'ongoing' | 'completed' | 'cancelled_with_refund' | 'cancelled_without_refund';
     partnerStatus: 'not_assigned' | 'assigned' | 'enroute' | 'arrived';
     paymentStatus: 'pending' | 'baseAmountPaid' | 'fullAmountPaid' | 'refunded';
     timestamp: string;

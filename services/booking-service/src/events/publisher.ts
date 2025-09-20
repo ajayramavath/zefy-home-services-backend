@@ -235,9 +235,9 @@ export class BookingsEventPublisher extends EventPublisher {
         bookingId: booking._id,
         userId: booking.user.id,
         partnerId: booking.partner?.id,
-        reason: 'User cancelled', // You might want to add reason to the booking model
+        reason: 'User cancelled',
         cancelledAt: booking.updatedAt.toISOString(),
-        refundAmount: booking.amount.totalAmount, // Calculate actual refund amount
+        refundAmount: booking.amount.baseAmount,
         timestamp: new Date().toISOString()
       }
     };

@@ -30,18 +30,22 @@ export class AuthController {
       }
       await req.server.redis.set(redisKey, otp, { EX: ttlInSeconds });
 
+      const res = await AuthController.sendOtpMessage(phoneNumber, otp);
+
       req.server.log.info(`OTP sent to ${phoneNumber}: ${otp}`);
 
-      return reply.status(200).send({
-        success: true,
-        message: 'OTP sent',
-        data: {
-          phoneNumber,
-          expiresIn: ttlInSeconds
-        }
-      })
+      if (res) {
+        return reply.status(200).send({
+          success: true,
+          message: 'OTP sent',
+          data: {
+            phoneNumber,
+            expiresIn: ttlInSeconds
+          }
+        })
+      }
     } catch (error: any) {
-      req.server.log.error('Error sending OTP:', error);
+      req.server.log.error(error.toString());
       return reply.status(500).send({
         success: false,
         message: 'Failed to send OTP',
@@ -208,8 +212,50 @@ export class AuthController {
   }
 
   private static getRandomOTP(): string {
-    // Simulate OTP generation
-    return '000000';
+    const otp = Math.floor(Math.random() * 9000) + 1000;
+    return otp.toString();
+  }
+
+  private static async sendOtpMessage(phoneNumber: string, otp: string): Promise<boolean> {
+    const baseUrl = process.env.DLT_BASE_URL;
+    const apiKey = process.env.FAST2SMS_API_KEY;
+    const route = process.env.DLT_ROUTE;
+    const senderId = process.env.DLT_SENDER_ID;
+    const otpMessageId = process.env.DLT_OTP_MESSAGE_ID;
+
+    if (!apiKey) {
+      throw new Error('FAST2SMS_API_KEY not set');
+    }
+
+    if (!baseUrl || !route || !senderId || !otpMessageId) {
+      throw new Error('Required DLT configuration not set');
+    }
+
+    const url = `${baseUrl}?` +
+      `authorization=${apiKey}&` +
+      `route=${route}&` +
+      `sender_id=${senderId}&` +
+      `message=${otpMessageId}&` +
+      `variables_values=${otp}&` +
+      `flash=0&` +
+      `numbers=${phoneNumber}`;
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.error(`SMS API error: ${response.status} ${response.statusText}`);
+        return false;
+      }
+
+      const result = await response.json();
+      console.log('SMS sent successfully:', result);
+      return true;
+
+    } catch (error) {
+      console.error('Failed to send SMS:', error);
+      return false;
+    }
   }
 
   private static validatePhoneNumber(phoneNumber: string): boolean {

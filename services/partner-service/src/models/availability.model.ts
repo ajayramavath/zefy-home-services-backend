@@ -63,7 +63,6 @@ const availabilitySchema = new Schema<IAvailability>(
     },
     currentBookingId: {
       type: String,
-      default: "jdhbkhjsbe"
     }
   },
   {

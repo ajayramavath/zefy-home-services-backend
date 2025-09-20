@@ -1,4 +1,4 @@
-import { EventConsumer, BookingPartnerAssignedEvent, PartnerEnrouteEvent, PartnerLocationUpdatedEvent, UserPartnerArrivedEvent, PartnerUpdateAvailabilityEvent } from "@zf/common";
+import { EventConsumer, BookingPartnerAssignedEvent, PartnerEnrouteEvent, PartnerLocationUpdatedEvent, UserPartnerArrivedEvent, PartnerUpdateAvailabilityEvent, ServiceStartedEvent, ServiceCompletedEvent } from "@zf/common";
 import { PartnerService } from "../service/partner.service";
 import { PartnerEventPublisher } from "./publisher";
 import { FastifyInstance } from "fastify";
@@ -109,12 +109,42 @@ export class PartnerEventConsumer extends EventConsumer {
     }
   }
 
+  async consumeServiceStarted(event: ServiceStartedEvent): Promise<void> {
+    const { bookingId, userId, partnerId, startTime, location } = event.data;
+    const availability = await Availability.findOne({ partnerId: partnerId });
+    if (!availability) {
+      this.fastify.log.error(`Availability not found: ${partnerId}`);
+      return;
+    }
+    availability.status = 'BUSY';
+    availability.currentBookingId = bookingId;
+    await availability.save();
+    this.fastify.log.info(`Partner ${partnerId} status updated to busy for booking ${bookingId}`);
+  }
+
+  async consumeServiceCompleted(event: ServiceCompletedEvent): Promise<void> {
+    const { bookingId, userId, partnerId, startTime, endTime, duration, finalAmount } = event.data;
+    const availability = await Availability.findOne({ partnerId: partnerId });
+    if (!availability) {
+      this.fastify.log.error(`Availability not found: ${partnerId}`);
+      return;
+    }
+    availability.status = 'IDLE';
+    availability.currentBookingId = null;
+    availability.todayStats.completedJobs.push(bookingId);
+    await availability.save();
+    this.fastify.log.info(`Partner ${partnerId} status updated to idle for booking ${bookingId}`);
+  }
+
   async setupEventListeners(): Promise<void> {
     try {
       this.on<BookingPartnerAssignedEvent>('BOOKING_PARTNER_ASSIGNED', this.consumeBookingAssignmentSuccess.bind(this));
       this.on<UserPartnerArrivedEvent>('USER_PARTNER_ARRIVED', this.consumeUserPartnerArrived.bind(this));
       this.on<PartnerUpdateAvailabilityEvent>('PARTNER_UPDATE_AVAILABILITY', this.consumePartnerUpdateAvailability.bind(this));
       this.on<PartnerLocationUpdatedEvent>('PARTNER_LOCATION_UPDATED', this.consumePartnerLocationUpdated.bind(this));
+      this.on<PartnerEnrouteEvent>('PARTNER_ENROUTE_EVENT', this.consumePartnerEnroute.bind(this));
+      this.on<ServiceStartedEvent>('SERVICE_STARTED', this.consumeServiceStarted.bind(this));
+      this.on<ServiceCompletedEvent>('SERVICE_COMPLETED', this.consumeServiceCompleted.bind(this));
 
 
       await this.startConsuming('partner.events', [
@@ -128,7 +158,10 @@ export class PartnerEventConsumer extends EventConsumer {
         'user.*',
         'user.partner.arrived',
         'partner.availability.updated',
-        'partner.location.updated'
+        'partner.location.updated',
+        'partner.enroute',
+        'booking.status.updated',
+        'service.*'
       ]);
 
       this.fastify.log.info('Booking event consumers initialized successfully');

@@ -5,8 +5,10 @@ import {
   Step2Data,
   Step3Data,
   Step4Data,
+  UpdateAvailabilityDetails,
   UpdateOnboardingStep,
-  Step5Data
+  UpdatePersonalInfo,
+  UpdateServices,
 } from '../schemas/partner.schema';
 import { Availability } from "../models/availability.model";
 import { IAvailability, IPartner } from "@zf/types";
@@ -26,9 +28,14 @@ export class PartnerController {
           message: 'Partner not found',
         });
       }
+
+      const partnerWithAvailability = await Partner.findById(partner._id)
+        .populate('availabilityId')
+        .lean();
+
       return reply.status(200).send({
         success: true,
-        data: partner
+        data: partnerWithAvailability
       });
     } catch (error) {
       request.server.log.error(error.toString());
@@ -65,7 +72,6 @@ export class PartnerController {
 
     }
   }
-
 
   static async createPartner(userId: string): Promise<IPartner> {
     try {
@@ -123,7 +129,9 @@ export class PartnerController {
 
     try {
       const { userId } = req.session;
-      const partner = await Partner.findOne({ userId });
+      const partner = await Partner.findOne({ userId })
+        .populate('availabilityId')
+        .lean();;
 
       if (!partner) {
         const newPartner = await PartnerController.createPartner(userId);
@@ -147,7 +155,7 @@ export class PartnerController {
           status: partner.status,
           completionStep: partner.completionStep,
           canStartOnboarding: partner.status === 'incomplete',
-          partner: partner.toJSON()
+          partner: partner
         }
       });
 
@@ -240,12 +248,6 @@ export class PartnerController {
 
         case 4: {
           const stepData = data as Step4Data;
-          partner.bankDetails = stepData.bankDetails;
-          break;
-        }
-
-        case 5: {
-          const stepData = data as Step5Data;
           const { type, number, selfiePhoto, idFrontPhoto, idBackPhoto } = stepData;
           partner.verification = {
             idProof: {
@@ -272,7 +274,7 @@ export class PartnerController {
       }
 
       partner.completionStep = step;
-      if (partner.completionStep === 5) {
+      if (partner.completionStep === 4) {
         partner.status = 'pending_approval';
       }
       request.server.log.info(`Partner ${JSON.stringify(partner)}`);
@@ -412,6 +414,35 @@ export class PartnerController {
     }
   }
 
+  static async getCurrentBookingId(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { partner } = request;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const availability = await Availability.findOne({ partnerId: partner._id });
+      if (!availability) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Availability not found'
+        });
+      }
+      return reply.status(200).send({
+        success: true,
+        data: availability.currentBookingId
+      });
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to get current Booking Id'
+      });
+    }
+  }
+
   static async approvePartner(request: FastifyRequest<{ Params: { partnerId: string }, Querystring: { verify: boolean } }>, reply: FastifyReply) {
     try {
 
@@ -455,6 +486,141 @@ export class PartnerController {
       return reply.status(500).send({
         success: false,
         message: 'Failed to approve'
+      });
+    }
+  }
+
+  static async updatePersonalInfo(request: FastifyRequest<{ Body: UpdatePersonalInfo }>, reply: FastifyReply) {
+    try {
+      const partner = request.partner;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const partnerDb = await Partner.findById(partner._id);
+      if (!partnerDb) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const { fullName, dateOfBirth, gender } = request.body;
+      const updateFields: any = {};
+
+      if (fullName !== undefined) {
+        updateFields['personalInfo.fullName'] = fullName;
+      }
+      if (dateOfBirth !== undefined) {
+        updateFields['personalInfo.dateOfBirth'] = new Date(dateOfBirth);
+      }
+      if (gender !== undefined) {
+        updateFields['personalInfo.gender'] = gender;
+      }
+
+      await Partner.findByIdAndUpdate(partner._id, { $set: updateFields });
+
+      return reply.code(200).send({
+        success: true,
+        message: 'Personal information updated successfully'
+      });
+
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to update'
+      });
+    }
+  }
+
+  static async updateServices(request: FastifyRequest<{ Body: UpdateServices }>, reply: FastifyReply) {
+    try {
+      const partner = request.partner;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const partnerDb = await Partner.findById(partner._id);
+      if (!partnerDb) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      partnerDb.serviceIDs = request.body.serviceIDs;
+      await partnerDb.save();
+      if (partnerDb.availabilityId) {
+        await Availability.findByIdAndUpdate(
+          partnerDb.availabilityId,
+          { serviceIDs: request.body.serviceIDs }
+        );
+      }
+
+      return reply.code(200).send({
+        success: true,
+        message: 'Services updated successfully'
+      });
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to update'
+      });
+    }
+  }
+
+  static async updateAvailabilityDetails(request: FastifyRequest<{ Body: UpdateAvailabilityDetails }>, reply: FastifyReply) {
+    try {
+      const partner = request.partner;
+      if (!partner) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const partnerDb = await Partner.findById(partner._id);
+      if (!partnerDb) {
+        return reply.status(404).send({
+          success: false,
+          message: 'Partner not found'
+        });
+      }
+      const { availableDays, startTime, endTime } = request.body;
+      const updateData: any = {};
+
+      if (availableDays) {
+        const dayNameToNumber: Record<string, number> = {
+          'sunday': 0,
+          'monday': 1,
+          'tuesday': 2,
+          'wednesday': 3,
+          'thursday': 4,
+          'friday': 5,
+          'saturday': 6
+        };
+
+        const workingDays = availableDays.map(day => dayNameToNumber[day.toLowerCase()]);
+        updateData['workingSchedule.workingDays'] = workingDays;
+      }
+
+      if (startTime) {
+        updateData['workingSchedule.workingHours.start'] = startTime;
+      }
+
+      if (endTime) {
+        updateData['workingSchedule.workingHours.end'] = endTime;
+      }
+      await Availability.findByIdAndUpdate(partnerDb.availabilityId, updateData);
+
+    } catch (error) {
+      request.server.log.error(error.toString());
+      return reply.status(500).send({
+        success: false,
+        message: 'Failed to update'
       });
     }
   }

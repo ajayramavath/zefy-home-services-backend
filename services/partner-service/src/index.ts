@@ -10,6 +10,8 @@ import { PartnerEventConsumer } from './events/consumer';
 import { PartnerService } from './service/partner.service';
 import { S3Client } from '@aws-sdk/client-s3';
 
+process.env.TZ = 'Asia/Kolkata';
+
 const fastify = Fastify({
   logger: {
     level: 'info',

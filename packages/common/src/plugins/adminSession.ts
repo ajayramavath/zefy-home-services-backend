@@ -118,6 +118,7 @@ const adminSessionPlugin: FastifyPluginAsync<AdminSessionOpts> = async (app, opt
       "/admin/auth/reset-password",
       "/admin/createAdmin",
       "/ws",
+      "/bookings/webhooks/razorpay/cancellation"
     ];
 
     const isPublicPath = publicPaths.some(path =>
