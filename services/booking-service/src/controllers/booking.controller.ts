@@ -626,7 +626,7 @@ export class BookingController {
         createdAt: booking.serviceDetails?.endTime.toISOString() || booking.updatedAt.toISOString()
       }));
 
-      req.server.log.info(`serviceMap here 1 ${(recentJobs[0].toString())}`);
+      // req.server.log.info(`serviceMap here 1 ${(recentJobs[0].toString())}`);
 
 
 
