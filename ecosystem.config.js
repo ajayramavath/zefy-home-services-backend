@@ -13,7 +13,12 @@ module.exports = {
         PORT: 3001,
         MONGO_URI: 'mongodb://localhost:27017/zefy_users',
         REDIS_URL: 'redis://localhost:6379',
-        AMQP_URL: 'amqp://admin:password123@localhost:5672'
+        AMQP_URL: 'amqp://admin:password123@localhost:5672',
+        DLT_BASE_URL: 'https://www.fast2sms.com/dev/bulkV2',
+        FAST2SMS_API_KEY: 'ET3lJmIMgdqFcZa0rBkvHGsDOUtK9Lif7Ne5u2xAwhbXYP8p14TxmGajIR8OfVvJnotHdrhpgMXw9LA7',
+        DLT_ROUTE: 'dlt',
+        DLT_SENDER_ID: 'ZEFY',
+        DLT_OTP_MESSAGE_ID: '198600'
       },
     },
     {
